@@ -10,7 +10,7 @@ const GRAVITY := 9.8
 const INTERACT_RANGE := 2.6
 
 var can_move := true
-var avatar: Humanoid
+var avatar: Node3D   # CharacterModel (fallback: Humanoid)
 var cam_yaw := 0.0
 var cam_pitch := -0.32
 var cam_dist := 4.6
@@ -32,11 +32,15 @@ func _ready() -> void:
 	col.position.y = 0.875
 	add_child(col)
 
-	avatar = Humanoid.new()
-	avatar.shirt = Color(0.86, 0.42, 0.24)
-	avatar.pants = Color(0.20, 0.27, 0.40)
-	avatar.hair = Color(0.10, 0.08, 0.07)
-	avatar.skin = Color(0.55, 0.38, 0.27)
+	const MODEL := "res://assets/quaternius/men/Casual_Hoodie.gltf"
+	if ResourceLoader.exists(MODEL):
+		avatar = CharacterModel.new()
+		avatar.model_path = MODEL
+	else:
+		var h := Humanoid.new()
+		h.shirt = Color(0.86, 0.42, 0.24)
+		h.pants = Color(0.20, 0.27, 0.40)
+		avatar = h
 	add_child(avatar)
 
 	_pivot = Node3D.new()

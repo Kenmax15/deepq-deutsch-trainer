@@ -10,7 +10,7 @@ signal said(speaker_key: String, line_id: String)
 @export var greet_line := "p_hello"
 @export var answer_line := "p_way"
 
-var avatar: Humanoid
+var avatar: Node3D   # Humanoid or CharacterModel
 var voice: AudioStreamPlayer3D
 var interactable := false
 var _wp := 0
@@ -20,7 +20,7 @@ var _player: Node3D
 var _voice_dir := "res://assets/audio/voice/brot_kaufen/"
 
 
-func setup(h: Humanoid, player: Node3D) -> void:
+func setup(h: Node3D, player: Node3D) -> void:
 	avatar = h
 	add_child(avatar)
 	_player = player

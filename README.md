@@ -38,7 +38,7 @@ Moteur : **Godot 4.5.1** (GDScript). Fonctionne **entièrement hors ligne** : au
 | Exigence du cahier des charges | Réalisation |
 |---|---|
 | Rue allemande + boulangerie connectées | « Lindenstraße » avec immeubles, trottoirs, lampadaires, bancs, plaque de rue ; boulangerie Becker avec vitrine, auvent, enseigne, intérieur meublé (comptoir vitré, étagères de pains et de bretzels, caisse, machine à café, ardoise des prix). On entre par la porte, la clochette sonne. |
-| Avatar joueur, vendeuse et quelques PNJ | Avatar en 3ᵉ personne ; Frau Becker derrière le comptoir ; 4 passants qui marchent, s'arrêtent, regardent le joueur, saluent (« Guten Morgen! », « Hallo! ») ; une cliente dans la boutique. Un passant indique le chemin quand on lui parle. |
+| Avatar joueur, vendeuse et quelques PNJ | Personnages humains riggés et animés (marche, course, repos, salut de la main, geste en parlant) issus des packs CC0 *Ultimate Modular Men/Women* de Quaternius. Avatar en 3ᵉ personne (sweat à capuche) ; Frau Becker derrière le comptoir ; 4 passants qui marchent, s'arrêtent, regardent le joueur, saluent (« Guten Morgen! », « Hallo! ») ; un client dans la boutique. Un passant indique le chemin quand on lui parle. |
 | Circulation et bruits | Véhicules sur les deux voies avec moteur **spatialisé et effet Doppler** (une voiture qui approche devient plus audible puis s'éloigne), klaxons occasionnels, ambiance de rue, murmure de foule, oiseaux ; dans la boutique : radio, machine à café, caisse enregistreuse, clochette. La rue est assourdie quand on est à l'intérieur. |
 | Mission complète « acheter du pain » | 6 objectifs : entrer, saluer et commander, choisir un pain, répondre à « Sonst noch etwas? », payer le bon montant (compréhension orale des prix), prendre congé. |
 | Dialogues en allemand | 23 répliques enregistrées en voix de synthèse allemande (voix féminine pour la vendeuse, masculine pour les passants et les réponses modèles), chacune en version **normale** et **lente**. |
@@ -53,11 +53,10 @@ Moteur : **Godot 4.5.1** (GDScript). Fonctionne **entièrement hors ligne** : au
 
 ### Ce qui reste provisoire
 
-- **Personnages** : faute de modèles téléchargeables au moment du développement (quota Google Drive dépassé pour les
-  packs Quaternius), les humains sont des **personnages provisoires construits par code** (silhouettes animées : marche,
-  respiration, gestes en parlant, salut de la main). Ils exposent une petite interface (`set_walk_speed`, `talk`,
-  `wave`) pour être remplacés par des modèles riggés réalistes **sans toucher à la logique**. C'est la priorité n° 1
-  de l'itération suivante, conformément à la décision « personnages très réalistes » (§5.1).
+- **Personnages** : modèles low-poly stylisés (Quaternius, CC0), crédibles mais pas encore « très réalistes » au
+  sens du §5.1. Ils passent par une interface commune (`set_walk_speed`, `talk`, `wave`) : on pourra les remplacer
+  par des avatars réalistes sans toucher à la logique. Les silhouettes procédurales de `humanoid.gd` restent comme
+  solution de repli si un modèle manque.
 - **Synchronisation labiale** : non réalisée (à valider sur prototype selon le §5.4).
 - **Réponses orales** : la saisie est textuelle ; la reconnaissance vocale locale (STT) est prévue en phase 2.0.
 - **Android** : le projet est configuré pour le moteur de rendu mobile, mais les commandes tactiles et l'export APK
@@ -88,11 +87,13 @@ godot/                         projet Godot (ouvrir godot/project.godot)
   scripts/main.gd              orchestration (monde, PNJ, voix, mission, interface)
   scripts/mission_runner.gd    logique de mission pilotée par les données (sans dépendance 3D, testable)
   scripts/world.gd             rue + boulangerie
-  scripts/player.gd, npc.gd, vehicle.gd, humanoid.gd
+  scripts/player.gd, npc.gd, vehicle.gd
+  scripts/character_model.gd   personnages riggés (Quaternius) ; humanoid.gd = repli procédural
   scripts/audio_director.gd    ambiances, presets d'immersion, atténuation des voix
   scripts/hud.gd, qubi.gd      interface, Qubi
   scripts/game_state.gd        réglages, sauvegarde locale, journal d'erreurs
   assets/kenney/               décors et véhicules (CC0)
+  assets/quaternius/           personnages riggés et animés (CC0)
   assets/audio/                sons synthétisés + voix allemandes générées
   tests/                       tests automatiques
 tools/gen_sfx.py               régénère tous les bruitages et ambiances (numpy)
@@ -106,7 +107,7 @@ Ajouter une mission = écrire un nouveau fichier JSON sur le modèle de `brot_ka
 
 ## Prochaines étapes proposées
 
-1. Remplacer les personnages provisoires par des modèles réalistes riggés (avatar personnalisable, vendeuse, passants).
+1. Avatar personnalisable (choix parmi les tenues Quaternius), puis passage à des avatars plus réalistes.
 2. Commandes tactiles et export Android ; export Windows (.exe).
 3. Relecture du contenu par un enseignant, puis deuxième scène (gare ou café).
 4. Brancher le DeepQ Tutor local (Ollama / llama.cpp) pour évaluer les réponses libres non prévues par les règles.

@@ -72,10 +72,21 @@ func _ready() -> void:
 
 
 # --------------------------------------------------------------- spawning
-func _human(params: Dictionary) -> Humanoid:
+const Q := "res://assets/quaternius/"
+
+
+## Returns a rigged Quaternius character when "model" is given, otherwise the
+## procedural placeholder (kept as a fallback for missing models).
+func _human(params: Dictionary) -> Node3D:
+	if params.has("model") and ResourceLoader.exists(Q + params.model):
+		var c := CharacterModel.new()
+		c.model_path = Q + params.model
+		c.apron = params.get("apron", false)
+		return c
 	var h := Humanoid.new()
 	for k in params:
-		h.set(k, params[k])
+		if k != "model":
+			h.set(k, params[k])
 	return h
 
 
@@ -85,7 +96,7 @@ func _spawn_seller() -> void:
 	seller.interactable = true
 	seller.position = world.seller_spot
 	add_child(seller)
-	seller.setup(_human({"shirt": Color(0.86, 0.36, 0.4), "pants": Color(0.25, 0.22, 0.3),
+	seller.setup(_human({"model": "women/Casual.gltf", "shirt": Color(0.86, 0.36, 0.4), "pants": Color(0.25, 0.22, 0.3),
 		"hair": Color(0.55, 0.32, 0.16), "skin": Color(0.93, 0.76, 0.64), "long_hair": true,
 		"apron": true, "height": 1.66}), player)
 	seller.avatar.rotation.y = PI    # faces the door / customers
@@ -93,10 +104,10 @@ func _spawn_seller() -> void:
 
 func _spawn_passersby() -> void:
 	var looks := [
-		{"shirt": Color(0.2, 0.5, 0.35), "pants": Color(0.2, 0.2, 0.25), "hair": Color(0.9, 0.82, 0.6), "skin": Color(0.95, 0.8, 0.7), "height": 1.82},
-		{"shirt": Color(0.95, 0.85, 0.3), "pants": Color(0.15, 0.3, 0.55), "hair": Color(0.08, 0.06, 0.05), "skin": Color(0.42, 0.28, 0.2), "long_hair": true, "height": 1.68},
-		{"shirt": Color(0.4, 0.4, 0.45), "pants": Color(0.12, 0.12, 0.14), "hair": Color(0.6, 0.6, 0.6), "skin": Color(0.88, 0.7, 0.58), "height": 1.74},
-		{"shirt": Color(0.55, 0.25, 0.6), "pants": Color(0.3, 0.25, 0.2), "hair": Color(0.35, 0.2, 0.1), "skin": Color(0.78, 0.58, 0.44), "long_hair": true, "height": 1.62},
+		{"model": "men/Suit.gltf", "shirt": Color(0.2, 0.5, 0.35), "pants": Color(0.2, 0.2, 0.25), "hair": Color(0.9, 0.82, 0.6), "skin": Color(0.95, 0.8, 0.7), "height": 1.82},
+		{"model": "women/Formal.gltf", "shirt": Color(0.95, 0.85, 0.3), "pants": Color(0.15, 0.3, 0.55), "hair": Color(0.08, 0.06, 0.05), "skin": Color(0.42, 0.28, 0.2), "long_hair": true, "height": 1.68},
+		{"model": "men/Casual_2.gltf", "shirt": Color(0.4, 0.4, 0.45), "pants": Color(0.12, 0.12, 0.14), "hair": Color(0.6, 0.6, 0.6), "skin": Color(0.88, 0.7, 0.58), "height": 1.74},
+		{"model": "women/Suit.gltf", "shirt": Color(0.55, 0.25, 0.6), "pants": Color(0.3, 0.25, 0.2), "hair": Color(0.35, 0.2, 0.1), "skin": Color(0.78, 0.58, 0.44), "long_hair": true, "height": 1.62},
 	]
 	var routes := [
 		[Vector3(-40, 0.12, 6.8), Vector3(-8, 0.12, 6.8)],
@@ -123,7 +134,7 @@ func _spawn_passersby() -> void:
 	c.role = "customer"
 	c.position = Vector3(17.2, 0.12, 12.0)
 	add_child(c)
-	c.setup(_human({"shirt": Color(0.3, 0.55, 0.75), "pants": Color(0.2, 0.2, 0.2), "hair": Color(0.2, 0.12, 0.08), "skin": Color(0.7, 0.5, 0.38)}), null)
+	c.setup(_human({"model": "men/Farmer.gltf", "shirt": Color(0.3, 0.55, 0.75), "pants": Color(0.2, 0.2, 0.2), "hair": Color(0.2, 0.12, 0.08), "skin": Color(0.7, 0.5, 0.38)}), null)
 	c.avatar.rotation.y = 0.0
 
 
@@ -402,6 +413,18 @@ func _demo(which: String) -> void:
 			_start_dialogue()
 			await get_tree().create_timer(1.0).timeout
 			player.cam_dist = 3.4
+		"closeup":
+			player.global_position = Vector3(11.0, 0.2, 12.2)
+			player.cam_yaw = PI
+			player.cam_pitch = -0.08
+			player.cam_dist = 2.6
+			player.visible = false
+			_on_enter_bakery()
+		"passersby":
+			player.global_position = Vector3(-22.0, 0.2, 5.0)
+			player.cam_yaw = -PI / 2 + 0.5
+			player.cam_pitch = -0.12
+			player.cam_dist = 4.0
 		"results":
 			_start_dialogue()
 			await get_tree().create_timer(0.5).timeout
