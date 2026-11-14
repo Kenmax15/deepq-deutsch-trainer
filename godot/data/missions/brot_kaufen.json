@@ -105,10 +105,10 @@
       ],
       "free": {
         "rules": [
-          {"all": ["(einen|eine) (roggen|vollkorn|weiss)"], "result": "wrong", "ref": 2},
-          {"all": ["roggen"], "result": "correct", "set": {"bread": "roggen"}, "ref": 0},
-          {"all": ["vollkorn"], "result": "correct", "set": {"bread": "vollkorn"}, "ref": 1},
-          {"all": ["weiss"], "result": "correct", "set": {"bread": "weiss"}, "model": "m_bread_r",
+          {"all": ["(einen|eine) (roggen|vollkorn|weiss)(brot)?"], "result": "wrong", "ref": 2},
+          {"all": ["(roggenbrot|roggen)"], "result": "correct", "set": {"bread": "roggen"}, "ref": 0},
+          {"all": ["(vollkornbrot|vollkorn)"], "result": "correct", "set": {"bread": "vollkorn"}, "ref": 1},
+          {"all": ["(weissbrot|weiss)"], "result": "correct", "set": {"bread": "weiss"}, "model": "m_bread_r",
            "feedback": {"fr": "Bien : das Weißbrot → ein Weißbrot.", "en": "Good: das Weißbrot → ein Weißbrot."}, "next": "extras"}
         ]
       }

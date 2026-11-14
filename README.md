@@ -28,7 +28,29 @@ The look is **photorealistic**:
 | **Talking to Frau Becker** | **Passers-by and traffic** |
 | ![](docs/screenshots/04_dialogue.jpg) | ![](docs/screenshots/07_passersby.jpg) |
 
-## Running the prototype on Windows
+## Web edition (current version)
+
+The mission now also runs as a **web app**: modern photos, German voices and real ambient sound
+(street, shop bell, coffee machine, till, coins, paper bag) instead of the animated 3D scene.
+Works on desktop and mobile, offline once loaded, no account.
+
+- Play: open `web/index.html` through any static web server, e.g. `cd web && python -m http.server 8000`,
+  then go to http://localhost:8000 (opening the file directly from disk blocks the mission data in most browsers).
+- Flow: street (ask the way) → shop bell → counter with Frau Becker → choose bread, rolls, pay, bag → goodbye → summary.
+- Same mission data and evaluation rules as the 3D pilot (`web/data/brot_kaufen.json`, engine in `web/js/mission.js`):
+  guided answers or free typing, hints, objectives, checkpoint and error journal saved in the browser.
+- Tests: `node web/tests/mission.test.js`.
+- Photo and sound credits: `web/CREDITS.md` (Unsplash / Pixabay licences, BigSoundBank CC0).
+
+| Title | Street | Choosing bread |
+|---|---|---|
+| ![](docs/screenshots/web_01_title.jpg) | ![](docs/screenshots/web_02_street.jpg) | ![](docs/screenshots/web_03_bread.jpg) |
+| **Paying** | **Summary** | **Mobile** |
+| ![](docs/screenshots/web_04_pay.jpg) | ![](docs/screenshots/web_05_results.jpg) | ![](docs/screenshots/web_06_mobile.jpg) |
+
+The animated 3D pilot below (Godot) is kept in `godot/` but paused.
+
+## 3D pilot (paused) — running it on Windows
 
 1. Download **Godot 4.5.1 (Standard, Windows 64-bit)**: https://godotengine.org/download/archive/4.5.1-stable/
    It is a zip with no installer: extract it and run `Godot_v4.5.1-stable_win64.exe`. Later 4.x versions also work.
