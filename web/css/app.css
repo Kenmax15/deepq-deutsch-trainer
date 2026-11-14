@@ -208,3 +208,28 @@ dialog h2 { margin: 0 0 14px; }
   .goal { font-size: 16px; }
 }
 @media (max-height: 560px) and (min-width: 641px) { .context { display: none; } .sheet { max-height: 76vh; } }
+
+/* ---------- modes ---------- */
+.modes { border: 0; padding: 0; margin: 0 0 22px; display: grid; gap: 8px; }
+.modes legend { font-size: 13px; color: var(--muted); font-weight: 650; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.modes label { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.modes label:has(input:checked) { border-color: rgba(242, 179, 61, 0.6); background: rgba(242, 179, 61, 0.1); }
+.modes input { accent-color: var(--accent); margin-top: 4px; }
+.modes b { display: block; font-size: 15px; }
+.modes small { display: block; color: var(--ink-2); font-size: 13.5px; }
+.show-guided { margin-top: 2px; }
+
+/* ---------- scene intro & sound captions ---------- */
+.scene-intro { position: absolute; z-index: 4; top: 72px; left: 0; right: 0; margin: 0 auto; width: min(560px, calc(100vw - 28px)); text-align: center; padding: 16px 22px; border-radius: 18px; background: rgba(14, 11, 9, 0.62); backdrop-filter: blur(8px); border: 1px solid var(--line); animation: rise 0.9s ease both; cursor: pointer; transition: opacity 0.9s; }
+.scene-intro.out { opacity: 0; }
+.scene-intro .when { margin: 0; color: var(--accent); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
+.scene-intro .what { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(17px, 2.3vw, 21px); line-height: 1.45; font-style: italic; }
+.captions { position: absolute; z-index: 6; top: calc(max(12px, env(safe-area-inset-top)) + 4px); left: 50%; transform: translateX(-50%); display: grid; gap: 6px; justify-items: center; pointer-events: none; }
+.cap { background: rgba(10, 8, 6, 0.72); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13.5px; color: var(--ink-2); backdrop-filter: blur(8px); animation: pop 0.3s ease both; transition: opacity 0.5s; white-space: nowrap; }
+.cap.out { opacity: 0; }
+@media (max-width: 640px) {
+  .captions { top: 58px; }
+  .scene-intro { top: 104px; padding: 12px 16px; }
+  .modes label { padding: 8px 12px; }
+  .modes small { font-size: 12.5px; }
+}

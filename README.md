@@ -1,179 +1,75 @@
-# DeepQ Deutsch Trainer — Life Simulator (pilot prototype)
+# DeepQ Deutsch Trainer — Life Simulator (pilot)
 
-First playable prototype of the **DeepQ Life Simulator**, built from milestone §14 and pilot deliverable §5.5 of the
-consolidated specification v2.0. It contains:
+Pilot of the **DeepQ Life Simulator** (specification v2.0, §5.5): a German street connected to a bakery and a
+complete A1 mission, **"Brot kaufen" (buying bread)**.
 
-- a German street connected to a bakery;
-- a player avatar, a shop assistant and passers-by;
-- traffic and its sounds;
-- a complete A1-level mission, **"Brot kaufen" (buying bread)**.
+**Design decision (14 November 2026): no 3D for now.** The simulator plays on the learner's imagination with
+**photos, sound and atmosphere**: real photographs of each place, German voices, a living soundscape (street,
+church bells, passing cars and bikes, the shop bell, the coffee machine, cups, the bread knife, the till, coins,
+the paper bag) and a short line of scene-setting text. The earlier animated 3D prototype (Godot) is kept on the
+branch `archive-3d-pilot`.
 
-Engine: **Godot 4.5.1** (GDScript). It runs **fully offline**: no account, and no data leaves the machine.
-
-The look is **photorealistic**:
-
-- **Scenery**: scanned PBR materials, an HDRI sky and Gründerzeit façades.
-- **People**: realistic human characters moving with **real motion capture**.
-- **Cars**: modelled cars with clear-coat paint.
-
-![Lindenstraße](docs/screenshots/02_street.jpg)
-
-| Bäckerei · Konditorei Becker | Inside the shop |
-|---|---|
-| ![](docs/screenshots/03_bakery.jpg) | ![](docs/screenshots/06_shop.jpg) |
-| **Breads and pastries** | |
-| ![](docs/screenshots/08_vitrine.jpg) | ![](docs/screenshots/09_facade.jpg) |
-| ![](docs/screenshots/10_cafe.jpg) | ![](docs/screenshots/11_oven.jpg) |
-| ![](docs/screenshots/12_posture.jpg) | |
-| **Talking to Frau Becker** | **Passers-by and traffic** |
-| ![](docs/screenshots/04_dialogue.jpg) | ![](docs/screenshots/07_passersby.jpg) |
-
-## Web edition (current version)
-
-The mission now also runs as a **web app**: modern photos, German voices and real ambient sound
-(street, shop bell, coffee machine, till, coins, paper bag) instead of the animated 3D scene.
-Works on desktop and mobile, offline once loaded, no account.
-
-- Play: double-click `web/index.html` (Chrome, Edge, Firefox or Safari), or serve the folder with any static
-  web server (`cd web && python -m http.server 8000`). After editing a mission JSON, run `python tools/web_data.py`.
-- Flow: street (ask the way) → shop bell → counter with Frau Becker → choose bread, rolls, pay, bag → goodbye → summary.
-- Same mission data and evaluation rules as the 3D pilot (`web/data/brot_kaufen.json`, engine in `web/js/mission.js`):
-  guided answers or free typing, hints, objectives, checkpoint and error journal saved in the browser.
-- Tests: `node web/tests/mission.test.js`.
-- Photo and sound credits: `web/CREDITS.md` (Unsplash / Pixabay licences, BigSoundBank CC0).
-
-| Title | Street | Choosing bread |
+| Title and modes | Street | Choosing bread |
 |---|---|---|
 | ![](docs/screenshots/web_01_title.jpg) | ![](docs/screenshots/web_02_street.jpg) | ![](docs/screenshots/web_03_bread.jpg) |
 | **Paying** | **Summary** | **Mobile** |
 | ![](docs/screenshots/web_04_pay.jpg) | ![](docs/screenshots/web_05_results.jpg) | ![](docs/screenshots/web_06_mobile.jpg) |
 
-The animated 3D pilot below (Godot) is kept in `godot/` but paused.
+## Playing
 
-## 3D pilot (paused) — running it on Windows
+Double-click `web/index.html` (Chrome, Edge, Firefox or Safari, on Windows, Android, macOS or iOS),
+or serve the `web/` folder with any static web server (`cd web && python -m http.server 8000`).
+No account, no Internet needed once the files are on the device; progress is saved in the browser.
 
-1. Download **Godot 4.5.1 (Standard, Windows 64-bit)**: https://godotengine.org/download/archive/4.5.1-stable/
-   It is a zip with no installer: extract it and run `Godot_v4.5.1-stable_win64.exe`. Later 4.x versions also work.
-2. In the Project Manager, click **Import** and choose `godot/project.godot` in this folder.
-   The first import of the models and sounds takes about a minute.
-3. Press **F5** (or the ▶ button at the top right) to play.
+## What the mission contains
 
-A graphics card from roughly 2016 or later is recommended. In **Settings (Esc) → Graphics quality** you can choose:
-
-| Level | What it renders |
-|---|---|
-| Low | For weak or integrated GPUs |
-| Medium | — |
-| High | **Default**: ambient occlusion, indirect light and reflections |
-| Ultra | Adds real-time global illumination and volumetric light |
-
-## Controls
-
-| Action | Key |
-|---|---|
-| Move | WASD (QWERTY) / ZQSD (AZERTY) or arrow keys |
-| Run | Shift |
-| Orbit camera / zoom | hold right mouse button + move / mouse wheel |
-| Talk (shop assistant, passer-by) | E or Space |
-| Hint from Qubi | H |
-| Replay the last line | R |
-| Settings / pause | Esc |
-
-## What the pilot contains (§5.5)
-
-| Specification requirement | Implementation |
-|---|---|
-| German street + bakery, connected | **Lindenstraße** is a row of Gründerzeit apartment houses, generated from parameters (width, floors, colour, shop or entrance on the ground floor):<br>• Façades: plaster or brick, stone window surrounds, double casement windows, balconies with railings, cornices, tiled roofs, chimneys, gutters, blue enamel house numbers.<br>• Ground floors: shops with signs (pharmacy, florist, bookshop…).<br>• Street: asphalt with lane markings, cobbled parking lanes, granite kerbs, concrete paving slabs, a zebra crossing with its sign, street lights, bollards, benches and a street-name sign.<br>**Bäckerei · Konditorei Becker** is a modern German bakery on the ground floor of house no. 12, modelled on reference images:<br>• Outside: slatted wood cladding, an anthracite fascia with raised, back-lit 3D lettering ("Bäckerei · Konditorei") and a wheat emblem, fascia downlights, a projecting "Bäckerei" sign, a cassette awning whose valance reads "Bäckerei · Café · Frühstück", full-height glazing with black frames, an open double door, window lettering ("Frische Brötchen · Kaffee · Kuchen · Snacks"), a "Geöffnet" sign, an opening-hours plate and an entrance mat. On the pavement: an "Unser Angebot" A-board with the mission prices, planters with hydrangeas and a box ball, and two bistro tables with chairs.<br>• Inside: light wood floor, a black back wall with steel shelving and LED-lit wooden shelves full of breads (Landbrot, Bauernbrot, Kastenbrot, Weißbrot, rolls), a "Bäckerei Konditorei" chalkboard, an "Unser Angebot" price board with the mission's prices, and an LED-lit glass vitrine (pretzels, croissants, Laugengebäck, Danish, Berliner, cinnamon swirls, sugared pastries) with a glass shelf of cake slices (Schwarzwälder, strawberry, cheesecake) and filled rolls.<br>• Equipment: a two-deck baking oven with glowing windows, a bread slicer, a drinks fridge, a two-group espresso machine with grinder, paper cups and a coffee menu screen, a till, card terminal, paper bags, tip jar, napkins and sugar, flour sacks, a window display with bread baskets, framed pictures ("Seit 1921 in Regensburg"), pendant lamps, ceiling spots, trailing plants and a café corner.<br>• People: Frau Becker (brown apron) at the counter, a second baker working behind it, an elderly customer waiting her turn, a guest having coffee in the café corner, and another customer.<br>• Frau Becker wears a brown apron.<br>You enter through the open door, and the bell rings. |
-| Player avatar, shop assistant and a few NPCs | **Realistic people** built with MakeHuman (CC0), with skin, eyes, hair and clothes. They vary in sex, age and origin: the player, Frau Becker, four passers-by, and four more people in the shop (a second baker, an elderly customer, a café guest and an older man).<br>**Motion capture**: walking, running, idling, waiting, talking and waving come from the CMU motion-capture database, retargeted onto each body. Sitting comes from a calm stretch of a seated clip.<br>• **Upright posture**: the recorded actors stand slightly hunched and lean forward; the retargeting straightens the chest and puts the neck back above the ankles, keeping the feet planted.<br>• Walk and run speeds match the recorded strides, so feet do not slide.<br>• People **turn their head towards you** when you come close.<br>• Frau Becker uses conversational gestures while she speaks.<br>Passers-by stop, greet you ("Guten Morgen!", "Hallo!"), and one gives directions when spoken to. |
-| Traffic and sounds | Cars are modelled for the project: a hatchback, a saloon and a delivery van.<br>• They have clear-coat paint in typical German colours, glass, lights, spinning wheels and German number plates.<br>• They drive on the right in both lanes, and more cars are parked along both kerbs.<br>Engines are **spatialised with Doppler**, so a car gets louder as it approaches and fades as it drives off.<br>The street also has occasional horns, ambience, crowd murmur and birds.<br>The shop has a radio, a coffee machine, a till and a door bell. Street noise is muffled indoors. |
-| Complete "buy bread" mission | Six objectives:<br>1. Enter the shop.<br>2. Greet the assistant and order.<br>3. Choose a bread.<br>4. Answer "Sonst noch etwas?".<br>5. Pay the right amount, which tests listening comprehension of prices.<br>6. Say goodbye. |
-| Dialogue in German | 23 lines are voiced with German speech synthesis. The shop assistant has a female voice; passers-by and model answers have a male voice.<br>Each line has a **normal** and a **slow** version. |
-| Guided or free answers | Answer by choosing A/B/C/D **or** by typing freely, with on-screen ä ö ü ß keys.<br>Free answers are checked offline by rules covering greeting, article, plural, politeness and amount.<br>Umlauts typed without a German keyboard (ae, oe, ue) are accepted. |
-| Help from Qubi | Qubi is the mascot, a Bloch sphere with a state-vector antenna.<br>It welcomes the player, gives instructions and step-specific hints, and encourages without guilt-tripping. |
-| Three modes (§5.4) | **Learning**: Qubi gives a hint at every step, and the translation is shown.<br>**Mission**: hints are available on request and recorded without penalty.<br>**Real life**: no Qubi or translation by default. Free typing comes first, with guided answers as a fallback, and the ambience is dense. |
-| Audio settings (§5.3) | Separate volumes for master, voice, SFX, ambience and music.<br>Ambience presets are Easy (reduced noise), Normal and Dense immersion.<br>Ambience and music are **ducked automatically** during teaching lines, so speech stays intelligible.<br>German subtitles and the translation can be switched on or off. |
-| Learning feedback | Each answer gets immediate, explained feedback in green, orange or red, plus a "Listen to a model answer" button.<br>The end-of-mission report shows first-try success, hints used, errors explained by category, vocabulary (with plurals) and grammar points. |
-| Saving | Everything is stored in the local file `user://deepq_save.json`. On Windows, that is `%APPDATA%\Godot\app_userdata\DeepQ Deutsch Trainer – Life Simulator (Pilot)\`.<br>It holds the settings, a checkpoint at every step, completed missions, the best score, an **error log** and the vocabulary met.<br>"Resume" restarts the mission where you left off. |
-| Photorealistic rendering, several quality levels (§5.1) | • Lighting: HDRI sky with image-based light and reflections, sun with soft cascaded shadows.<br>• Tone and atmosphere: AgX tone mapping, auto-exposure (stepping from the bright street into the shop adapts like an eye), and aerial perspective.<br>• Materials: scanned PBR (colour, normal, roughness, AO).<br>• Screen-space effects: ambient occlusion, indirect light and reflections; a reflection probe in the shop; subsurface scattering on skin.<br>• Quality levels: Low, Medium, High and Ultra (real-time global illumination). |
-| FR/EN interface | The whole interface and every translation exist in French and English. |
-
-### What is still provisional
-
-- **Characters**: MakeHuman people are realistic but not "film" quality.
-  - Faces have no expressions yet.
-  - The CC0 clothing set is small: a few outfits, including T-shirts with the MakeHuman logo.
-  - Higher-end scanned avatars could replace them through the same interface (`set_walk_speed`, `talk`, `wave`).
-- **Trees**: there are none yet. The free scanned trees are far too heavy for a game.
-- **Lip sync**: not implemented yet. §5.4 says to validate it on a prototype first.
-- **Spoken answers**: answers are typed for now. Local speech recognition (STT) is planned for phase 2.0.
-- **Android**: the project already uses the mobile renderer on Android. Touch controls and the APK export are still to do.
-- **Content**: a German teacher still needs to review it. Its status in the JSON is `draft-to-review`.
-
-## Acceptance tests (§12)
-
-| ID | Test | Status in the pilot |
-|---|---|---|
-| R01 | Works without Internet | ✔ no network resources |
-| R07 | 3D pilot: walking between street and bakery, mission and NPC interaction are playable | ✔ |
-| R08 | 3D audio: intelligible voices, contextual sound effects, separate volumes | ✔ (automatic ducking during speech) |
-| R10 | Saving | ✔ checkpoint at every step (sync is out of scope for the pilot) |
-
-Automated tests of the mission logic run 32 checks. They cover a perfect run, mistakes, free answers, payment, hints and resuming:
-
-```
-godot --headless --path godot res://tests/test_mission.tscn
-```
+- **Street** (Rothenburg, Saturday morning): Qubi explains the mission; you can ask a passer-by the way.
+- **Bakery**: the door bell rings, Frau Becker greets you. You order, choose a loaf (Roggenbrot, Vollkornbrot,
+  Weißbrot), answer "Sonst noch etwas?", listen to the price and pay, accept or refuse a bag, say goodbye.
+- **Answers**: guided answers or free typing (umlauts optional: "Brotchen" = "Brötchen"). Each answer gets an
+  explanation; wrong or approximate answers come with the right wording to listen to.
+- **Help**: replay, slow replay, translation, Qubi's hints; objectives with progress dots.
+- **Modes** (§5.4): *Learning* (translation shown, Qubi helps, quiet soundscape), *Mission* (translation on
+  request, normal soundscape), *Real life* (German text hidden until tapped, guided answers hidden until asked
+  for, dense soundscape).
+- **Soundscape** (§5.3): separate volumes for voices, effects and ambience; three levels (easy / normal / dense);
+  the ambience ducks automatically under every voice line; captions for sounds ("🔔 The door bell chimes").
+- **Summary**: first-try score, errors with explanations, the mission's vocabulary and grammar points.
+- Interface in French or English.
 
 ## Project layout
 
 ```
-godot/                         Godot project (open godot/project.godot)
-  data/missions/brot_kaufen.json   teaching content: lines, translations, answers, rules, vocabulary
-  scripts/main.gd              orchestration (world, NPCs, cars, voices, mission, UI)
-  scripts/mission_runner.gd    data-driven mission logic (no 3D dependency, testable)
-  scripts/world.gd             street, façade generator, bakery, lighting and quality levels
-  scripts/mesh_builder.gd      merges thousands of boxes into one mesh per material
-  scripts/character_model.gd   realistic animated characters; humanoid.gd = procedural fallback
-  scripts/head_look.gd         head/neck turn towards the player on top of the mocap
-  scripts/player.gd, npc.gd, vehicle.gd
-  scripts/audio_director.gd    ambiences, immersion presets, voice ducking
-  scripts/hud.gd, qubi.gd      user interface, Qubi
-  scripts/game_state.gd        settings, local save, error log
-  assets/characters/           MakeHuman people with mocap animations (generated, see below)
-  assets/vehicles/             procedural cars (generated)
-  assets/pbr/                  scanned PBR materials (ambientCG, CC0)
-  assets/props/                scanned props (Poly Haven, CC0)
-  assets/sky/                  HDRI sky (Poly Haven, CC0)
-  assets/audio/                synthesised sounds + generated German voices
-  tests/                       automated tests; lineup.tscn shows all characters side by side
-tools/build_characters.sh      builds every character: mh_build.py (MakeHuman body, skin, hair,
-                               clothes, rig) then mh_animate.py (CMU mocap retargeting, export)
-tools/make_cars.py             builds the three car models (Blender)
-tools/fetch_assets.py          downloads the CC0 textures, sky and props
-tools/gen_sfx.py               regenerates all sound effects and ambiences (numpy)
-tools/gen_voices.py            regenerates a mission's voices from its JSON (Piper TTS)
-docs/screenshots/              screenshots
-ASSETS.md                      origin and licence of every asset
+web/index.html            the app (static files only)
+web/js/mission.js         mission engine: dialogue nodes, answer rules, objectives, score, checkpoint
+web/js/app.js             scenes, dialogue UI, soundscape, modes, settings
+web/js/i18n.js            interface strings (FR/EN)
+web/data/brot_kaufen.json mission content (German lines, translations, answers, rules, vocabulary)
+web/data/brot_kaufen.js   same data as a script, so index.html also runs from disk (tools/web_data.py)
+web/img, web/audio        photos (WebP), voices and sounds (MP3)
+web/CREDITS.md            source and licence of every photo and sound
+web/tests/                engine tests (node web/tests/mission.test.js)
+tools/gen_voices.py       German voices with Piper TTS (offline)
+tools/gen_sfx.py          synthesised interface sounds
+tools/web_data.py         rebuilds web/data/*.js after editing a mission JSON
 ```
 
-The generated assets are committed, so the game runs as is. To rebuild them, you need two things:
+Adding a place = a few photos + an ambience and its background events (`SCENES` in `app.js`) + a mission JSON
++ its voice lines.
 
-- Blender's Python module: `pip install bpy`.
-- The MPFB2 extension with the CC0 *makehuman_system_assets* pack.
+## Acceptance tests (§12)
 
-The header of each tool explains the steps.
+| ID | Test | Status |
+|---|---|---|
+| R01 | Works without Internet | ✔ only local files |
+| R07 | Pilot: street → bakery, mission and interaction with the shop assistant playable | ✔ (photo scenes instead of 3D) |
+| R08 | Audio: intelligible voices, contextual sound effects, separate volumes | ✔ ducking under speech, 3 levels |
+| R10 | Saving | ✔ checkpoint at every step, error journal (sync out of scope) |
 
-To add a mission:
+`node web/tests/mission.test.js` runs 35 checks: a perfect run, mistakes, free answers, compound bread names,
+payment, hints and resuming.
 
-1. Write a new JSON file modelled on `brot_kaufen.json`.
-2. Generate its voices with `tools/gen_voices.py`.
-3. Place the scenery and the NPC.
+## Licences
 
-## Suggested next steps
-
-1. Avatar customisation: body, skin, hair and outfit, generated with the same MakeHuman pipeline.
-2. Facial expressions and lip sync for Frau Becker.
-3. Lightweight realistic trees and more street life: cyclists and people sitting at the café.
-4. Touch controls and the Android export; Windows (.exe) export.
-5. Teacher review of the content, then a second scene (train station or café).
-6. Connect the local DeepQ Tutor (Ollama / llama.cpp) to assess free answers the rules do not cover.
+Photos: Unsplash and Pixabay licences. Sounds: BigSoundBank (CC0). Voices: Piper TTS with CC0-trained voices.
+Details in `web/CREDITS.md`.

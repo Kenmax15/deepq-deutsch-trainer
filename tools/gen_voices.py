@@ -7,12 +7,13 @@ Voices (both trained on CC0 datasets, see ASSETS.md):
 
 Usage (from the repository root):
     pip install piper-tts
-    python tools/gen_voices.py --voices DIR [--mission godot/data/missions/brot_kaufen.json]
+    python tools/gen_voices.py --voices DIR [--mission web/data/brot_kaufen.json]
 
 DIR must contain de_DE-kerstin-low.onnx(.json) and de_DE-thorsten-high.onnx(.json),
 downloadable from https://huggingface.co/rhasspy/piper-voices (de/de_DE/...).
-For every line two files are written to godot/assets/audio/voice/<mission>/:
-<id>.wav (natural speed) and <id>_slow.wav (about 40 % slower, same pitch).
+For every line two files are written to build/voice_wav/<mission>/:
+<id>.wav (natural speed) and <id>_slow.wav (about 40 % slower, same pitch),
+then converted to web/audio/voice/<id>.mp3 with ffmpeg (mono, 64 kbit/s).
 """
 import argparse
 import json
@@ -32,11 +33,11 @@ SPEEDS = {"": 1.0, "_slow": 1.45}
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--voices", required=True, help="folder with the Piper .onnx voices")
-    ap.add_argument("--mission", default=str(ROOT / "godot/data/missions/brot_kaufen.json"))
+    ap.add_argument("--mission", default=str(ROOT / "web/data/brot_kaufen.json"))
     args = ap.parse_args()
 
     mission = json.loads(Path(args.mission).read_text(encoding="utf-8"))
-    out = ROOT / "godot/assets/audio/voice" / mission["id"]
+    out = ROOT / "build" / "voice_wav" / mission["id"]
     out.mkdir(parents=True, exist_ok=True)
     for line_id, line in mission["lines"].items():
         model = Path(args.voices) / VOICE_FILES[line["voice"]]

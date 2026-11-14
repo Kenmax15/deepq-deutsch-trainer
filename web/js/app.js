@@ -13,28 +13,55 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
   };
   const navLang = (navigator.language || "fr").slice(0, 2) === "fr" ? "fr" : (navigator.language || "").startsWith("en") ? "en" : "fr";
-  const S = Object.assign({ lang: navLang, trans: true, subs: true, muted: false, vVoice: 1, vSfx: 0.8, vAmb: 0.45 }, ls.get(KEY_SET, {}));
+  const S = Object.assign({ lang: navLang, mode: "learning", imm: "easy", capt: true, trans: true, subs: true, muted: false, vVoice: 1, vSfx: 0.8, vAmb: 0.5 }, ls.get(KEY_SET, {}));
   const saveSettings = () => ls.set(KEY_SET, S);
   const T = (k) => { const e = window.I18N[k]; return e ? (e[S.lang] || e.en) : k; };
 
   // -------------------------------------------------------------- audio
+  // Soundscape levels (§5.3): ambience gain, how often background events happen,
+  // and how much the ambience ducks under a voice so dialogue stays intelligible.
+  const LEVELS = {
+    easy: { amb: 0.45, events: 0.5, duck: 0.25 },
+    normal: { amb: 1.0, events: 1.0, duck: 0.45 },
+    dense: { amb: 1.6, events: 1.8, duck: 0.75 },
+  };
+  // Background events per place: [sound, min s, max s, gain]
+  const SCENES = {
+    street: { amb: "street_amb", once: [["church_bell", 3, 0.8]], events: [["car_pass", 14, 34, 0.8], ["bike_bell", 20, 50, 0.7]] },
+    bakery: { amb: "bakery_amb", once: [], events: [["coffee_machine", 22, 45, 0.45], ["cup", 9, 24, 0.8], ["teaspoon", 12, 30, 0.7], ["bread_knife", 18, 40, 0.8]] },
+  };
   const Snd = {
-    voiceEl: null, queue: [], busy: false, amb: null, ambSrc: "", coffeeTimer: 0, onIdle: null,
-    vol(kind) { return S.muted ? 0 : kind === "voice" ? S.vVoice : kind === "amb" ? S.vAmb : S.vSfx; },
-    sfx(name, gain = 1) {
+    voiceEl: null, queue: [], busy: false, amb: null, ambSrc: "", timers: [], ducked: false,
+    lvl() { return LEVELS[S.imm] || LEVELS.normal; },
+    vol(kind) {
+      if (S.muted) return 0;
+      if (kind === "voice") return S.vVoice;
+      if (kind === "amb") return Math.min(1, S.vAmb * this.lvl().amb * (this.ducked ? this.lvl().duck : 1));
+      return S.vSfx;
+    },
+    sfx(name, gain = 1, bg) {
       const a = new Audio("audio/sfx/" + name + ".mp3");
-      a.volume = Math.min(1, this.vol("sfx") * gain);
+      const g = bg ? Math.min(1, this.lvl().amb) * (this.ducked ? this.lvl().duck : 1) : 1;
+      a.volume = Math.min(1, this.vol("sfx") * gain * g);
       a.play().catch(() => {});
+      if (window.I18N["cap_" + name]) caption(T("cap_" + name));
       return a;
     },
     /** Queue voice lines; resolves when this line has finished. */
     say(id, slow) {
       return new Promise((resolve) => { this.queue.push({ id, slow, resolve }); this.next(); });
     },
+    duck(on) {
+      if (this.ducked === on) return;
+      this.ducked = on;
+      if (this.amb) fade(this.amb.cur, this.vol("amb"), on ? 300 : 900);
+    },
     next() {
-      if (this.busy || !this.queue.length) { if (!this.busy && this.onIdle) this.onIdle(); return; }
+      if (this.busy) return;
+      if (!this.queue.length) { this.duck(false); return; }
       const { id, slow, resolve } = this.queue.shift();
       this.busy = true;
+      this.duck(true);
       const a = new Audio("audio/voice/" + id + (slow ? "_slow" : "") + ".mp3");
       this.voiceEl = a;
       a.volume = this.vol("voice");
@@ -47,6 +74,7 @@
       this.queue.forEach((q) => q.resolve());
       this.queue = [];
       if (this.voiceEl) { const a = this.voiceEl; this.voiceEl = null; a.pause(); this.busy = false; document.querySelectorAll(".pill.speaking").forEach((p) => p.classList.remove("speaking")); }
+      this.duck(false);
     },
     /** Looping ambience with a soft cross-fade between two players. */
     ambience(name) {
@@ -71,17 +99,39 @@
       }, 250);
       this.amb = st;
     },
+    /** Ambience plus random background events for a place (null = silence). */
+    scene(name) {
+      this.timers.forEach(clearTimeout);
+      this.timers = [];
+      const sc = SCENES[name];
+      this.ambience(sc ? sc.amb : "");
+      if (!sc) return;
+      sc.once.forEach(([snd, at, g]) => this.timers.push(setTimeout(() => this.sfx(snd, g, true), at * 1000)));
+      sc.events.forEach(([snd, min, max, g]) => {
+        const plan = (first) => {
+          const k = this.lvl().events;
+          const t = ((first ? min * 0.4 : min) + Math.random() * (max - min)) / k;
+          this.timers.push(setTimeout(() => { if (!this.busy || S.imm === "dense") this.sfx(snd, g, true); plan(false); }, t * 1000));
+        };
+        plan(true);
+      });
+    },
     refreshVolumes() {
       if (this.amb) this.amb.cur.volume = this.vol("amb");
       if (this.voiceEl) this.voiceEl.volume = this.vol("voice");
     },
-    coffee(on) {
-      clearTimeout(this.coffeeTimer);
-      if (!on) return;
-      const tick = () => { this.sfx("coffee_machine", 0.35); this.coffeeTimer = setTimeout(tick, 28000 + Math.random() * 25000); };
-      this.coffeeTimer = setTimeout(tick, 6000);
-    },
   };
+  let capTimer = 0;
+  function caption(text) {
+    if (!S.capt) return;
+    const box = $("captions");
+    const c = el("div", "cap", esc(text));
+    box.appendChild(c);
+    while (box.children.length > 2) box.firstChild.remove();
+    clearTimeout(capTimer);
+    setTimeout(() => c.classList.add("out"), 2600);
+    setTimeout(() => c.remove(), 3200);
+  }
   function fade(a, to, ms, cb) {
     const from = a.volume, t0 = performance.now();
     const step = (t) => { const k = Math.min(1, (t - t0) / ms); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k < 1) requestAnimationFrame(step); else if (cb) cb(); };
@@ -126,6 +176,9 @@
       renderObjectives();
     }
     $("freeInput").placeholder = T(kind === "pay" ? "your_amount" : "your_answer");
+    [...$("setMode").options].forEach((o) => { o.textContent = T("mode_" + o.value); });
+    [...$("setImm").options].forEach((o) => { o.textContent = T("imm_" + o.value); });
+    document.querySelectorAll('#modes input').forEach((r) => { r.checked = r.value === S.mode; });
     renderSound();
   }
 
@@ -150,6 +203,8 @@
 
   let qubiKind = "";
   function qubi(text, k) {
+    if (S.mode === "real" && ["cheer", "oops", "pay", "way"].includes(k)) return;
+    if (S.mode === "mission" && k === "cheer") return;
     qubiKind = k || "";
     $("qubiText").textContent = text;
     const b = $("qubiBubble");
@@ -236,6 +291,10 @@
     });
     $("freeInput").placeholder = T(k === "pay" ? "your_amount" : "your_answer");
     $("freeInput").value = "";
+    const hideGuided = S.mode === "real";
+    box.hidden = hideGuided;
+    $("showGuided").hidden = !hideGuided;
+    if (hideGuided && !matchMedia("(hover: none)").matches) setTimeout(() => $("freeInput").focus(), 50);
   }
 
   function answerChoice(i, label) {
@@ -290,10 +349,10 @@
       feedback(result, fb, model);
       if (result === "correct") {
         Snd.sfx("success", 0.5);
-        if (Math.random() < 0.35) qubi(T("qubi_cheer"));
+        if (Math.random() < 0.35) qubi(T("qubi_cheer"), "cheer");
       } else {
         Snd.sfx(result === "unknown" ? "hint" : "wrong", 0.5);
-        if (result === "wrong") qubi(T("qubi_oops"));
+        if (result === "wrong") qubi(T("qubi_oops"), "oops");
       }
       if (result === "correct" && en.node().type === "pay") { Snd.sfx("till_beep"); setTimeout(() => Snd.sfx("coin"), 350); setTimeout(() => Snd.sfx("coin", 0.8), 650); }
       if (result === "correct" && en.nodeId === "bag") Snd.sfx("paper_bag");
@@ -320,6 +379,31 @@
     });
   }
 
+  let introTimer = 0;
+  function sceneIntro(name) {
+    $("introWhen").textContent = T("intro_" + name + "_when");
+    $("introWhat").textContent = T("intro_" + name + "_what");
+    const b = $("sceneIntro");
+    b.hidden = false;
+    b.classList.remove("out");
+    clearTimeout(introTimer);
+    introTimer = setTimeout(() => { b.classList.add("out"); introTimer = setTimeout(() => { b.hidden = true; }, 900); }, 7000);
+  }
+
+  // Modes (§5.4): Learning = full help, Mission = help on request, Real life = listen first.
+  const MODE_DEFAULTS = {
+    learning: { trans: true, subs: true, imm: "easy" },
+    mission: { trans: false, subs: true, imm: "normal" },
+    real: { trans: false, subs: false, imm: "dense" },
+  };
+  function applyMode(m) {
+    S.mode = m;
+    Object.assign(S, MODE_DEFAULTS[m]);
+    saveSettings();
+    document.querySelectorAll('#modes input').forEach((r) => { r.checked = r.value === m; });
+    Snd.refreshVolumes();
+  }
+
   // ------------------------------------------------------------- flow
   function enterStage() {
     document.body.classList.remove("title-mode");
@@ -338,8 +422,8 @@
   function sceneStreet() {
     enterStage();
     setBg("street");
-    Snd.ambience("street_amb");
-    Snd.coffee(false);
+    Snd.scene("street");
+    sceneIntro("street");
     qubi(T("qubi_welcome"));
     let asked = false;
     const actions = () => showActions([
@@ -352,7 +436,7 @@
       myMessage(T("ask_way_de"));
       npcMessage("p_way", engine.line("p_way"));
       await wait(600);
-      qubi(T("qubi_way"));
+      qubi(T("qubi_way"), "way");
       actions();
     }
     actions();
@@ -363,8 +447,8 @@
     Snd.stopVoice();
     Snd.sfx("shop_bell");
     setBg("counter");
-    Snd.ambience("bakery_amb");
-    Snd.coffee(true);
+    Snd.scene("bakery");
+    sceneIntro("bakery");
     log().innerHTML = "";
     engine.complete("enter");
     qubi(T("qubi_enter"));
@@ -385,7 +469,7 @@
 
   function showResults(sum) {
     Snd.stopVoice();
-    Snd.coffee(false);
+    Snd.scene(null);
     Snd.ambience("street_amb");
     setBg("cafe");
     $("stage").hidden = true;
@@ -408,8 +492,7 @@
 
   function toTitle() {
     Snd.stopVoice();
-    Snd.coffee(false);
-    Snd.ambience("");
+    Snd.scene(null);
     $("stage").hidden = true;
     $("topbar").hidden = true;
     $("results").hidden = true;
@@ -423,6 +506,12 @@
   $("startBtn").onclick = () => start(false);
   $("resumeBtn").onclick = () => start(true);
   $("againBtn").onclick = () => start(false);
+  document.querySelectorAll('#modes input').forEach((r) => (r.onchange = () => applyMode(r.value)));
+  $("showGuided").onclick = () => { $("choices").hidden = false; $("showGuided").hidden = true; };
+  $("sceneIntro").onclick = () => { $("sceneIntro").hidden = true; };
+  $("setMode").onchange = (e) => { applyMode(e.target.value); $("setTrans").checked = S.trans; $("setSubs").checked = S.subs; $("setImm").value = S.imm; };
+  $("setImm").onchange = (e) => { S.imm = e.target.value; saveSettings(); Snd.refreshVolumes(); };
+  $("setCapt").onchange = (e) => { S.capt = e.target.checked; saveSettings(); };
   $("hintBtn").onclick = () => { Snd.sfx("hint", 0.5); engine.hint(); };
   $("freeForm").onsubmit = (e) => {
     e.preventDefault();
@@ -437,6 +526,7 @@
   $("soundBtn").onclick = () => { S.muted = !S.muted; saveSettings(); renderSound(); Snd.refreshVolumes(); };
   $("settingsBtn").onclick = () => {
     $("setLang").value = S.lang; $("setTrans").checked = S.trans; $("setSubs").checked = S.subs;
+    $("setMode").value = S.mode; $("setImm").value = S.imm; $("setCapt").checked = S.capt;
     $("volVoice").value = S.vVoice; $("volSfx").value = S.vSfx; $("volAmb").value = S.vAmb;
     $("settings").showModal();
   };

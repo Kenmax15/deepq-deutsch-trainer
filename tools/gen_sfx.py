@@ -5,7 +5,8 @@ project owns all rights to them. Run from the repository root:
 
     python tools/gen_sfx.py
 
-Output: godot/assets/audio/sfx/*.wav (44.1 kHz, 16-bit, mono).
+Output: build/sfx_wav/*.wav (44.1 kHz, 16-bit, mono). The app uses ui_click, hint,
+success and wrong, converted to MP3 in web/audio/sfx/ (ffmpeg -i X.wav -ac 1 -b:a 96k X.mp3).
 """
 from pathlib import Path
 import wave
@@ -13,7 +14,7 @@ import wave
 import numpy as np
 
 SR = 44100
-OUT = Path(__file__).resolve().parents[1] / "godot" / "assets" / "audio" / "sfx"
+OUT = Path(__file__).resolve().parents[1] / "build" / "sfx_wav"
 rng = np.random.default_rng(7)
 
 

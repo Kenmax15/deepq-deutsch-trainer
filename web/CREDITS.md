@@ -32,6 +32,12 @@ Cut, looped and loudness-normalised for the app.
 | audio/sfx/paper_bag.mp3 | #1431 Pack of chips, opening |
 | audio/sfx/coin.mp3 | #0340 Coin in cup |
 | audio/sfx/till_beep.mp3 | #1417 Beep of a cash register |
+| audio/sfx/car_pass.mp3 | #2987 Car passing 50 km/h |
+| audio/sfx/bike_bell.mp3 | #1102 Bell bike |
+| audio/sfx/church_bell.mp3 | #0135 Church bell |
+| audio/sfx/cup.mp3 | #0627 Cup on a table |
+| audio/sfx/teaspoon.mp3 | #1196 Teaspoon, handled on a plate |
+| audio/sfx/bread_knife.mp3 | #1247 Bread knife |
 
 `ui_click`, `hint`, `success` and `wrong` are synthesised by `tools/gen_sfx.py` (no third-party audio).
 

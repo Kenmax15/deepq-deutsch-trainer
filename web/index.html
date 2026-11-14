@@ -48,6 +48,12 @@
         <li data-i18n="fact_audio"></li>
         <li data-i18n="fact_free"></li>
       </ul>
+      <fieldset class="modes" id="modes">
+        <legend data-i18n="mode"></legend>
+        <label><input type="radio" name="mode" value="learning"><span><b data-i18n="mode_learning"></b><small data-i18n="mode_learning_d"></small></span></label>
+        <label><input type="radio" name="mode" value="mission"><span><b data-i18n="mode_mission"></b><small data-i18n="mode_mission_d"></small></span></label>
+        <label><input type="radio" name="mode" value="real"><span><b data-i18n="mode_real"></b><small data-i18n="mode_real_d"></small></span></label>
+      </fieldset>
       <div class="actions">
         <button class="btn primary" id="startBtn" data-i18n="start"></button>
         <button class="btn ghost" id="resumeBtn" data-i18n="resume" hidden></button>
@@ -57,6 +63,12 @@
       </div>
     </div>
   </section>
+
+  <!-- sound captions ("subtitles" for noises) -->
+  <div class="captions" id="captions" aria-live="polite"></div>
+
+  <!-- scene intro: a short line that sets the scene for the imagination -->
+  <div class="scene-intro" id="sceneIntro" hidden><p class="when" id="introWhen"></p><p class="what" id="introWhat"></p></div>
 
   <!-- story / dialogue layer -->
   <section class="stage" id="stage" hidden>
@@ -73,6 +85,7 @@
       <div class="answer" id="answer" hidden>
         <p class="answer-label" id="answerLabel"></p>
         <div class="choices" id="choices"></div>
+        <button class="pill show-guided" id="showGuided" hidden data-i18n="show_guided"></button>
         <form class="free" id="freeForm" autocomplete="off">
           <input id="freeInput" type="text" spellcheck="false" lang="de" enterkeyhint="send">
           <button class="btn small" type="submit" data-i18n="send"></button>
@@ -115,10 +128,15 @@
   <dialog id="settings">
     <form method="dialog">
       <h2 data-i18n="settings"></h2>
+      <label class="row"><span data-i18n="mode"></span>
+        <select id="setMode"><option value="learning"></option><option value="mission"></option><option value="real"></option></select></label>
+      <label class="row"><span data-i18n="immersion"></span>
+        <select id="setImm"><option value="easy"></option><option value="normal"></option><option value="dense"></option></select></label>
       <label class="row"><span data-i18n="ui_lang"></span>
         <select id="setLang"><option value="fr">Français</option><option value="en">English</option></select></label>
       <label class="row"><span data-i18n="translation"></span><input type="checkbox" id="setTrans"></label>
       <label class="row"><span data-i18n="subtitles"></span><input type="checkbox" id="setSubs"></label>
+      <label class="row"><span data-i18n="sound_captions"></span><input type="checkbox" id="setCapt"></label>
       <label class="row"><span data-i18n="vol_voice"></span><input type="range" id="volVoice" min="0" max="1" step="0.05"></label>
       <label class="row"><span data-i18n="vol_sfx"></span><input type="range" id="volSfx" min="0" max="1" step="0.05"></label>
       <label class="row"><span data-i18n="vol_ambience"></span><input type="range" id="volAmb" min="0" max="1" step="0.05"></label>
