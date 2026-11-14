@@ -22,7 +22,7 @@ build() {  # name  json
   grep -E "EXPORTED|Error|Traceback" "$TMP/$1.log" || true
 }
 build player     '{"gender":1.0,"age":0.5,"weight":0.5,"muscle":0.55,"height":0.55,"skin":"young_caucasian_male","hair":"short02","eyebrows":"eyebrow001","clothes":["male_casualsuit05","shoes06"]}'
-build seller     '{"gender":0.0,"age":0.72,"weight":0.6,"height":0.45,"skin":"middleage_caucasian_female","hair":"ponytail01","eyebrows":"eyebrow010","clothes":["female_elegantsuit01","shoes04"]}'
+build seller     '{"gender":0.0,"age":0.72,"weight":0.6,"height":0.45,"skin":"middleage_caucasian_female","hair":"ponytail01","eyebrows":"eyebrow010","clothes":["female_elegantsuit01","shoes04"],"apron_on":"elegantsuit"}'
 build man_suit   '{"gender":1.0,"age":0.7,"weight":0.55,"height":0.6,"skin":"middleage_caucasian_male","hair":"short04","eyebrows":"eyebrow002","clothes":["male_elegantsuit01","shoes04"]}'
 build woman_sport '{"gender":0.0,"age":0.45,"weight":0.4,"height":0.55,"skin":"young_caucasian_female","hair":"bob02","eyebrows":"eyebrow011","clothes":["female_sportsuit01","shoes05"]}'
 build man_casual '{"gender":1.0,"age":0.47,"weight":0.5,"muscle":0.6,"height":0.6,"african":0.9,"caucasian":0.1,"asian":0.0,"skin":"young_african_male","hair":"short01","eyebrows":"eyebrow003","clothes":["male_casualsuit03","shoes02"]}'

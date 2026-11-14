@@ -28,11 +28,13 @@ SRC_FPS = 120
 MAP = {
     "Hips": "pelvis", "LowerBack": "spine_01", "Spine": "spine_02", "Spine1": "spine_03",
     "Neck": "neck_01", "Head": "head",
-    "LeftShoulder": "clavicle_l", "LeftArm": "upperarm_l", "LeftForeArm": "lowerarm_l", "LeftHand": "hand_l",
-    "RightShoulder": "clavicle_r", "RightArm": "upperarm_r", "RightForeArm": "lowerarm_r", "RightHand": "hand_r",
+    "LeftArm": "upperarm_l", "LeftForeArm": "lowerarm_l", "LeftHand": "hand_l",
+    "RightArm": "upperarm_r", "RightForeArm": "lowerarm_r", "RightHand": "hand_r",
     "LeftUpLeg": "thigh_l", "LeftLeg": "calf_l", "LeftFoot": "foot_l", "LeftToeBase": "ball_l",
     "RightUpLeg": "thigh_r", "RightLeg": "calf_r", "RightFoot": "foot_r", "RightToeBase": "ball_r",
 }
+# Clavicles are deliberately not mapped: the CMU actors' shrugged shoulders
+# looked tense on the characters; the rig's relaxed rest clavicles look natural.
 # Bones whose BVH tail is a stub: aim them at another bone's tail instead.
 SRC_AIM = {"LeftHand": "LeftFingerBase", "RightHand": "RightFingerBase",
            "Spine1": "Neck", "Hips": "LowerBack", "Neck": "Neck1", "Head": "Head"}

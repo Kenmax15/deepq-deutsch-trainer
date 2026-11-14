@@ -21,12 +21,9 @@ KEEP = ("_Color", "_NormalGL", "_Roughness", "_AmbientOcclusion")
 HDRI = ("kloofendal_48d_partly_cloudy_puresky", "2k")
 
 # Poly Haven models (glTF, 1k textures)
-MODELS = ["street_lamp_02", "painted_wooden_bench", "utility_box_01",
-          "water_manhole_cover", "standing_chalkboard_01", "CashRegister_01",
-          "wicker_basket_01", "wicker_basket_02", "hamburger_buns",
-          "croissant", "potted_plant_01", "potted_plant_02", "round_wooden_table_01",
-          "painted_wooden_chair_01", "wall_clock", "hanging_industrial_lamp", "planter_box_01",
-          "wooden_cutting_board"]
+MODELS = ["street_lamp_02", "painted_wooden_bench", "utility_box_01", "water_manhole_cover",
+          "CashRegister_01", "wicker_basket_01", "croissant", "potted_plant_01", "potted_plant_02",
+          "wall_clock", "planter_box_01"]
 
 
 def get(url):

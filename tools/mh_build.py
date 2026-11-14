@@ -60,6 +60,44 @@ for sub, fn, kind in parts:
 ExportService = di("mpfb.services.exportservice", "ExportService")
 ExportService.bake_modifiers_remove_helpers(bm, bake_masks=True, bake_subdiv=False,
                                             remove_helpers=True, also_proxy=True)
+# Optional bakery apron: front panel of the given garment, copied (keeps the
+# skin weights, so it moves with the body), pushed outwards, dark brown cloth.
+if spec.get("apron_on"):
+    import bmesh
+    src = [o for o in bpy.data.objects if o.type == "MESH" and spec["apron_on"] in o.name.lower()][0]
+    me = src.data.copy()
+    ap = src.copy()
+    ap.data = me
+    ap.name = "apron"
+    bpy.context.scene.collection.objects.link(ap)
+    bmx = bmesh.new()
+    bmx.from_mesh(me)
+    zmin = min(v.co.z for v in bmx.verts)
+    zmax = max(v.co.z for v in bmx.verts)
+    def keep(f):
+        c, n = f.calc_center_median(), f.normal
+        h = c.z
+        width = 0.085 if h > 1.1 else (0.13 if h > 1.02 else 0.22)
+        return n.y < -0.25 and 0.62 < h < 1.31 and abs(c.x) < width
+    bmesh.ops.delete(bmx, geom=[f for f in bmx.faces if not keep(f)], context="FACES")
+    bmesh.ops.delete(bmx, geom=[v for v in bmx.verts if not v.link_faces], context="VERTS")
+    bmx.normal_update()
+    for v in bmx.verts:
+        v.co += v.normal * 0.009
+    bmx.to_mesh(me)
+    bmx.free()
+    am = bpy.data.materials.new("apron_cloth")
+    am.use_nodes = True
+    b = am.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = (0.11, 0.075, 0.055, 1)
+    b.inputs["Roughness"].default_value = 0.85
+    me.materials.clear()
+    me.materials.append(am)
+    for poly in me.polygons:
+        poly.material_index = 0
+        poly.use_smooth = True
+    print("APRON faces", len(me.polygons))
+
 for o in bpy.data.objects:
     if o.type == "ARMATURE":
         o.name = "Armature"

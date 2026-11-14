@@ -21,6 +21,7 @@ const CURB_W := 0.15
 const WALK_Y := 0.12           # top of the pavement (walkable level)
 const PBR := "res://assets/pbr/"
 const PROPS := "res://assets/props/"
+const BakeryScene = preload("res://scripts/bakery.gd")
 
 # Bakery shop (south side, ground floor of the house spanning x 2..16)
 const BK_X0 := 4.0
@@ -35,7 +36,7 @@ var env: Environment
 var we: WorldEnvironment
 var seller_spot := Vector3(9.4, WALK_Y, 13.45)
 var counter_front := Vector3(9.4, WALK_Y, 11.2)
-var customer_spot := Vector3(11.9, WALK_Y, 10.4)
+var customer_spot := Vector3(10.2, WALK_Y, 10.3)
 var player_spawn := Vector3(-30.0, 0.2, 6.6)
 var radio: AudioStreamPlayer3D
 var coffee: AudioStreamPlayer3D
@@ -485,7 +486,7 @@ func _house(side: int, x0: float, x1: float, p: Dictionary) -> void:
 
 	match ground:
 		"bakery":
-			_ground_bakery(mb, x0, W, GH, T, wall, stone, base_stone, frame, p)
+			BakeryScene.facade(self, mb, x0, W, GH, stone, base_stone)
 		"shop":
 			_ground_shop(mb, xf, W, GH, T, wall, base_stone, dark_frame, p, rng)
 		_:
@@ -664,229 +665,11 @@ func _ground_shop(mb: MeshBuilder, xf: Transform3D, W: float, GH: float, T: floa
 		Color(0.93, 0.86, 0.66), 0, 600)
 
 
-func _ground_bakery(mb: MeshBuilder, x0: float, W: float, GH: float, T: float, wall: Material,
-		stone: Material, base_stone: Material, frame: Material, p: Dictionary) -> void:
-	var u_door0 := DOOR_X - 0.6 - x0
-	var u_door1 := DOOR_X + 0.6 - x0
-	var u_win0 := 6.1 - x0
-	var u_win1 := 12.7 - x0
-	var u_hd := 14.4 - x0          # house entrance to the flats
-	var holes := [[u_door0, u_door1, 0.12, 2.75], [u_win0, u_win1, 0.62, 3.0], [u_hd - 0.65, u_hd + 0.65, 0.27, 3.0]]
-	_wall_with_holes(mb, base_stone, 0.0, W, 0.0, GH, 0.25, holes)
-	var jh := holes.duplicate()
-	jh.append([u_door0 - 0.3, u_win1 + 0.3, 0.0, 4.0])
-	_joints(mb, jh, W, GH)
-	var green := plain(Color(0.09, 0.2, 0.15), 0.45)
-	var brass := plain(Color(0.78, 0.62, 0.34), 0.3, 1.0)
-	# shopfront frame (painted dark green wood)
-	for h in holes.slice(0, 2):
-		mb.box_min(Vector3(h[0] - 0.12, h[2] - 0.05, -0.05), Vector3(0.12, h[3] - h[2] + 0.17, 0.3), green)
-		mb.box_min(Vector3(h[1], h[2] - 0.05, -0.05), Vector3(0.12, h[3] - h[2] + 0.17, 0.3), green)
-		mb.box_min(Vector3(h[0] - 0.12, h[3], -0.05), Vector3(h[1] - h[0] + 0.24, 0.12, 0.3), green)
-	# shop window glass with glazing bars
-	var h1: Array = holes[1]
-	mb.box_min(Vector3(h1[0], h1[2], 0.12), Vector3(h1[1] - h1[0], h1[3] - h1[2], 0.02), clear_glass())
-	mb.box_min(Vector3(h1[0], h1[2] - 0.08, -0.12), Vector3(h1[1] - h1[0], 0.08, 0.37), stone)
-	for k in [1.0 / 3.0, 2.0 / 3.0]:
-		mb.box_min(Vector3(h1[0] + (h1[1] - h1[0]) * k - 0.04, h1[2], 0.08), Vector3(0.08, h1[3] - h1[2], 0.08), green)
-	mb.box_min(Vector3(h1[0], h1[3] - 0.55, 0.08), Vector3(h1[1] - h1[0], 0.06, 0.08), green)
-	# shop door: open (people walk through), only its frame and a door leaf swung inward
-	var h0: Array = holes[0]
-	var leaf := MeshBuilder.new()
-	leaf.xform = Transform3D(Basis.IDENTITY, Vector3(x0, 0, FACADE_Z))
-	leaf.box_min(Vector3(h0[0] + 0.02, 0.14, 0.3), Vector3(0.06, 2.5, 1.0), green)
-	leaf.box_min(Vector3(h0[0] + 0.03, 0.5, 0.38), Vector3(0.04, 1.9, 0.84), clear_glass())
-	leaf.commit(self)
-	# house entrance to the flats
-	var h2: Array = holes[2]
-	mb.box_min(Vector3(h2[0], h2[2], 0.22), Vector3(h2[1] - h2[0], 2.3, 0.06), pbr("PaintedWood005", 1.2, Color(0.75, 0.6, 0.5)))
-	mb.box_min(Vector3(h2[0], h2[2] + 2.3, 0.22), Vector3(h2[1] - h2[0], h2[3] - h2[2] - 2.3, 0.03), glass(0))
-	mb.box_min(Vector3(h2[0] - 0.2, WALK_Y, -0.3), Vector3(h2[1] - h2[0] + 0.4, 0.15, 0.55), stone)
-	# fascia band with gilded lettering
-	mb.box_min(Vector3(u_door0 - 0.3, 3.2, -0.08), Vector3(u_win1 - u_door0 + 0.6, 0.75, 0.08), green)
-	mb.box_min(Vector3(u_door0 - 0.36, 3.95, -0.14), Vector3(u_win1 - u_door0 + 0.72, 0.08, 0.14), green)
-	var xf := Transform3D(Basis.IDENTITY, Vector3(x0, 0, FACADE_Z))
-	sign_text("Bäckerei Becker", xf * Transform3D(Basis(Vector3.UP, PI), Vector3((u_door0 + u_win1) / 2.0, 3.58, -0.09)),
-		120, Color(0.95, 0.78, 0.42), 0, 700)
-	sign_text("seit 1921", xf * Transform3D(Basis(Vector3.UP, PI), Vector3(u_win1 - 0.6, 3.33, -0.09)),
-		40, Color(0.95, 0.78, 0.42), 0, 400)
-	sign_text("Geöffnet", xf * Transform3D(Basis(Vector3.UP, PI), Vector3(u_door0 + 0.6, 2.35, 0.11)),
-		36, Color(0.95, 0.95, 0.9), 0, 600)
-	# awning (Markise) over the shop window
-	var canvas := pbr("Plaster003", 0.8, Color(0.55, 0.12, 0.1), 1.0)
-	var aw := Basis(Vector3.RIGHT, deg_to_rad(-22))
-	mb.box(Vector3((u_win0 + u_win1) / 2.0, 3.0, -0.65), Vector3(u_win1 - u_win0 + 0.2, 0.03, 1.4), canvas, aw)
-	mb.box(Vector3((u_win0 + u_win1) / 2.0, 2.62, -1.3), Vector3(u_win1 - u_win0 + 0.2, 0.25, 0.02), canvas)
-	# hanging pretzel sign (bakers' guild emblem) on a wrought-iron bracket
-	var iron := plain(Color(0.07, 0.07, 0.07), 0.5, 0.6)
-	mb.box_min(Vector3(u_door0 - 0.55, 3.0, -1.0), Vector3(0.04, 0.04, 1.0), iron)
-	mb.box(Vector3(u_door0 - 0.53, 2.75, -0.55), Vector3(0.03, 0.03, 0.75), iron, Basis(Vector3.RIGHT, deg_to_rad(40)))
-	var pz := MeshInstance3D.new()
-	pz.mesh = pretzel_mesh()
-	pz.material_override = brass
-	pz.transform = xf * Transform3D(Basis(Vector3.UP, PI / 2.0) * Basis(Vector3.RIGHT, -PI / 2.0) * Basis.from_scale(Vector3.ONE * 0.32),
-		Vector3(u_door0 - 0.53, 2.5, -0.8))
-	add_child(pz)
-	# plinth under the shop window
-	mb.box_min(Vector3(-0.02, 0.0, -0.04), Vector3(W + 0.04, 0.5, 0.04), base_stone)
-
-	# collision: façade pieces either side of the door and the window wall
-	collider(Vector3(DOOR_X - 0.6 - x0, GH, 0.6), Vector3(x0 + (DOOR_X - 0.6 - x0) / 2.0, GH / 2.0, FACADE_Z + 0.3))
-	collider(Vector3(x0 + W - (DOOR_X + 0.6), GH, 0.6), Vector3((DOOR_X + 0.6 + x0 + W) / 2.0, GH / 2.0, FACADE_Z + 0.3))
-	collider(Vector3(W, 30, 12), Vector3(x0 + W / 2.0, GH + 15.0, FACADE_Z + 6.0))
-	collider(Vector3(BK_X0 - x0, GH, 12), Vector3(x0 + (BK_X0 - x0) / 2.0, GH / 2.0, FACADE_Z + 6.0))
-	collider(Vector3(x0 + W - BK_X1, GH, 12), Vector3((BK_X1 + x0 + W) / 2.0, GH / 2.0, FACADE_Z + 6.0))
-	collider(Vector3(W, GH, 12 - (BK_Z1 - FACADE_Z)), Vector3(x0 + W / 2.0, GH / 2.0, (BK_Z1 + FACADE_Z + 12) / 2.0))
-
-
 # ========================================================== bakery inside
 func _bakery_interior() -> void:
-	var mb := MeshBuilder.new()
+	BakeryScene.interior(self)
+	BakeryScene.pavement(self)
 	var cx := (BK_X0 + BK_X1) / 2.0
-	var floor_m := pbr("Tiles139", 1.2, Color(0.95, 0.93, 0.9), 0.9)
-	var wall_m := pbr("Plaster001", 2.0, Color(0.95, 0.92, 0.86))
-	var tiles := pbr("Tiles107", 0.9, Color(0.98, 0.98, 0.97), 0.6)
-	var wood := pbr("WoodFloor043", 1.6, Color(0.95, 0.85, 0.75), 0.8)
-	var light_wood := pbr("WoodFloor051", 1.4, Color(1, 1, 1), 0.8)
-	var top := pbr("Concrete034", 1.0, Color(0.92, 0.9, 0.86), 0.35)
-	var steel := plain(Color(0.78, 0.79, 0.8), 0.25, 1.0)
-	var black := plain(Color(0.05, 0.05, 0.05), 0.35, 0.2)
-	var z0 := FACADE_Z + 0.25
-	# floor, ceiling, walls
-	mb.box_min(Vector3(BK_X0, WALK_Y - 0.02, z0), Vector3(BK_X1 - BK_X0, 0.03, BK_Z1 - z0), floor_m)
-	mb.box_min(Vector3(BK_X0, SHOP_H, z0), Vector3(BK_X1 - BK_X0, 0.3, BK_Z1 - z0), wall_m)
-	mb.box_min(Vector3(BK_X0 - 0.2, 0, z0), Vector3(0.2, SHOP_H, BK_Z1 - z0), wall_m)
-	mb.box_min(Vector3(BK_X1, 0, z0), Vector3(0.2, SHOP_H, BK_Z1 - z0), wall_m)
-	mb.box_min(Vector3(BK_X0, 0, BK_Z1), Vector3(BK_X1 - BK_X0, SHOP_H, 0.2), wall_m)
-	# tiled wall behind the counter + skirting
-	mb.box_min(Vector3(BK_X0 + 1.6, WALK_Y, BK_Z1 - 0.02), Vector3(BK_X1 - BK_X0 - 1.6, 2.1, 0.02), tiles)
-	mb.box_min(Vector3(BK_X0, WALK_Y, z0), Vector3(0.02, 0.1, BK_Z1 - z0), wood)
-	mb.box_min(Vector3(BK_X1 - 0.02, WALK_Y, z0), Vector3(0.02, 0.1, BK_Z1 - z0), wood)
-	# ceiling cornice
-	mb.box_min(Vector3(BK_X0, SHOP_H - 0.12, BK_Z1 - 0.1), Vector3(BK_X1 - BK_X0, 0.12, 0.1), wall_m)
-
-	# ---- sales counter (Theke) with a glass vitrine
-	var c0 := Vector3(6.5, WALK_Y, 11.9)
-	var cw := 6.1
-	mb.box_min(c0, Vector3(cw, 0.93, 0.8), wood)
-	mb.box_min(c0 + Vector3(-0.03, 0.0, -0.03), Vector3(cw + 0.06, 0.1, 0.86), black)
-	mb.box_min(c0 + Vector3(-0.04, 0.93, -0.06), Vector3(cw + 0.08, 0.04, 0.9), top)
-	# vitrine (left part)
-	var vit0 := c0 + Vector3(0.1, 0.97, 0.05)
-	var vw := 3.8
-	mb.box_min(vit0 + Vector3(0, 0.0, 0.0), Vector3(vw, 0.02, 0.62), steel)
-	mb.box_min(vit0 + Vector3(0, 0.42, 0.0), Vector3(vw, 0.015, 0.62), steel)
-	for k in [0.0, vw - 0.02]:
-		mb.box_min(vit0 + Vector3(k, 0, 0), Vector3(0.02, 0.43, 0.62), steel)
-	collider(Vector3(cw + 0.1, 1.4, 0.9), c0 + Vector3(cw / 2.0, 0.7, 0.4))
-	var vg := MeshBuilder.new()
-	vg.box(vit0 + Vector3(vw / 2.0, 0.21, -0.02), Vector3(vw, 0.42, 0.012), clear_glass(),
-		Basis(Vector3.RIGHT, deg_to_rad(-18)))
-	vg.box(vit0 + Vector3(vw / 2.0, 0.43, 0.31), Vector3(vw, 0.012, 0.62), clear_glass())
-	vg.commit(self, false)
-	# pastries in the vitrine (Poly Haven croissants and buns on trays)
-	for i in range(6):
-		var px := vit0.x + 0.35 + i * 0.6
-		mb.box_min(Vector3(px - 0.25, vit0.y + 0.02, vit0.z + 0.08), Vector3(0.5, 0.012, 0.42), plain(Color(0.85, 0.85, 0.84), 0.3, 0.8))
-		if i % 2 == 0:
-			for j in range(3):
-				prop("croissant", Vector3(px - 0.12 + (j % 2) * 0.2, vit0.y + 0.035, vit0.z + 0.18 + j * 0.11), 0.3 * j, 1.0)
-		else:
-			prop("hamburger_buns", Vector3(px, vit0.y + 0.035, vit0.z + 0.29), 0.0, 1.0)
-	# cash register and a cutting board on the right part
-	prop("CashRegister_01", c0 + Vector3(cw - 0.7, 0.97, 0.35), PI, 0.75)
-	prop("wooden_cutting_board", c0 + Vector3(cw - 1.6, 0.97, 0.45), 0.2)
-	prop("wicker_basket_02", c0 + Vector3(cw - 2.1, 0.97, 0.3), 0.4)
-	prop("hamburger_buns", c0 + Vector3(cw - 2.08, 1.05, 0.33), 0.4, 0.8)
-
-	# ---- back counter with coffee machine and bread shelves
-	var b0 := Vector3(6.2, WALK_Y, BK_Z1 - 0.62)
-	mb.box_min(b0, Vector3(6.4, 0.9, 0.6), light_wood)
-	mb.box_min(b0 + Vector3(-0.02, 0.9, -0.02), Vector3(6.44, 0.04, 0.64), top)
-	collider(Vector3(6.4, 1.0, 0.6), b0 + Vector3(3.2, 0.5, 0.3))
-	# bread shelves above the back counter (slanted boards)
-	for row in range(3):
-		var y := 1.35 + row * 0.42
-		mb.box(Vector3(9.4, y, BK_Z1 - 0.25), Vector3(6.0, 0.03, 0.42), light_wood, Basis(Vector3.RIGHT, deg_to_rad(12)))
-		mb.box_min(Vector3(6.4, y - 0.02, BK_Z1 - 0.48), Vector3(6.0, 0.07, 0.025), light_wood)
-		_bread_row(Vector3(6.75, y + 0.06, BK_Z1 - 0.27), 11, row)
-	for sx in [6.38, 9.4, 12.42]:
-		mb.box_min(Vector3(sx - 0.02, 1.2, BK_Z1 - 0.48), Vector3(0.04, 1.2, 0.48), light_wood)
-	# coffee machine (stainless) on the back counter
-	var cm := Vector3(11.7, b0.y + 0.94, BK_Z1 - 0.35)
-	mb.box(cm + Vector3(0, 0.25, 0), Vector3(0.7, 0.5, 0.48), steel)
-	mb.box(cm + Vector3(0, 0.53, 0.0), Vector3(0.66, 0.06, 0.44), black)
-	for k in [-0.18, 0.18]:
-		mb.cylinder(cm + Vector3(k, 0.18, -0.27), 0.035, 0.08, black, 12, Basis(Vector3.RIGHT, PI / 2.0))
-	mb.box(cm + Vector3(0, 0.01, -0.22), Vector3(0.6, 0.02, 0.12), black)
-	# baskets with rolls
-	for i in range(3):
-		var bp := Vector3(7.0 + i * 0.55, b0.y + 0.94, BK_Z1 - 0.32)
-		prop("wicker_basket_01", bp, 0.2 * i)
-		prop("hamburger_buns", bp + Vector3(0, 0.05, 0.0), 0.3 * i, 0.75)
-
-	# ---- price board (chalkboard) on the left wall
-	var board_c := Vector3(BK_X0 + 0.03, 2.25, 13.2)
-	mb.box(board_c, Vector3(0.04, 1.05, 1.5), plain(Color(0.08, 0.09, 0.085), 0.95))
-	mb.box(board_c + Vector3(0.0, 0.0, 0.0), Vector3(0.03, 1.13, 1.58), wood)
-	var board_xf := Transform3D(Basis(Vector3.UP, PI / 2.0), board_c + Vector3(0.04, 0.0, 0.0))
-	sign_text("Roggenbrot      2,60 €\nVollkornbrot    2,90 €\nWeißbrot          2,20 €\nBrötchen          0,40 €\nBrezel              0,90 €",
-		board_xf, 24, Color(0.93, 0.93, 0.9), 0, 400).horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-
-	# ---- café corner by the window
-	prop("round_wooden_table_01", Vector3(11.9, WALK_Y, 9.4), 0.0, 0.55)
-	prop("painted_wooden_chair_01", Vector3(11.3, WALK_Y, 9.5), PI / 2.0 + 0.2, 1.0)
-	prop("painted_wooden_chair_01", Vector3(12.5, WALK_Y, 9.3), -PI / 2.0 - 0.1, 1.0)
-	collider(Vector3(1.6, 1.0, 1.0), Vector3(11.9, 0.5, 9.4))
-	prop("potted_plant_02", Vector3(4.5, WALK_Y, 9.0), 0.4, 1.0)
-	prop("wall_clock", Vector3(BK_X1 - 0.03, 2.9, 10.8), -PI / 2.0, 1.0)
-	mb.commit(self)
-
-	# ---- light: pendant lamps over the counter + soft fill
-	for lx in [7.4, 9.4, 11.4]:
-		prop("hanging_industrial_lamp", Vector3(lx, SHOP_H, 12.3), 0.0, 0.8)
-		var l := OmniLight3D.new()
-		l.position = Vector3(lx, SHOP_H - 1.25, 12.3)
-		l.light_color = Color(1.0, 0.82, 0.6)
-		l.light_energy = 2.2
-		l.omni_range = 6.0
-		l.omni_attenuation = 1.4
-		l.shadow_enabled = false
-		add_child(l)
-		shop_lights.append(l)
-	for lz in [9.6, 13.8]:
-		var f := OmniLight3D.new()
-		f.position = Vector3(cx, SHOP_H - 0.4, lz)
-		f.light_color = Color(1.0, 0.9, 0.78)
-		f.light_energy = 1.1
-		f.omni_range = 7.5
-		add_child(f)
-	# warm light over the bread shelves
-	var sl := SpotLight3D.new()
-	sl.position = Vector3(9.4, SHOP_H - 0.2, BK_Z1 - 1.6)
-	sl.rotation_degrees = Vector3(-60, 0, 0)
-	sl.light_color = Color(1.0, 0.8, 0.55)
-	sl.light_energy = 3.0
-	sl.spot_range = 4.0
-	sl.spot_angle = 55.0
-	add_child(sl)
-	shop_lights.append(sl)
-	# reflection probe so the glass and steel reflect the shop, not the sky
-	var rp := ReflectionProbe.new()
-	rp.position = Vector3(cx, SHOP_H / 2.0, (z0 + BK_Z1) / 2.0)
-	rp.size = Vector3(BK_X1 - BK_X0, SHOP_H, BK_Z1 - z0)
-	rp.box_projection = true
-	rp.interior = true
-	rp.ambient_mode = ReflectionProbe.AMBIENT_COLOR
-	rp.ambient_color = Color(0.55, 0.46, 0.38)
-	rp.ambient_color_energy = 0.6
-	add_child(rp)
-
-	# ---- sounds of the shop
-	radio = _sound3d("cafe_music_loop", Vector3(BK_X1 - 0.4, 2.6, 14.6), "Music", 2.0, -8.0)
-	coffee = _sound3d("coffee_machine_loop", cm, "SFX", 2.5, -14.0)
-	register = _sound3d("cash_register", c0 + Vector3(cw - 0.7, 1.1, 0.35), "SFX", 3.0, -4.0, false)
-	door_bell = _sound3d("door_bell", Vector3(DOOR_X, 2.5, BK_Z0 + 0.4), "SFX", 4.0, -6.0, false)
 
 	# trigger volume for "inside the shop"
 	var area := Area3D.new()
@@ -899,19 +682,6 @@ func _bakery_interior() -> void:
 	add_child(area)
 	area.body_entered.connect(_on_inside_entered)
 	area.body_exited.connect(_on_inside_exited)
-
-
-func _bread_mat(kind: int) -> StandardMaterial3D:
-	var cols := [Color(0.34, 0.2, 0.11), Color(0.47, 0.3, 0.15), Color(0.8, 0.58, 0.3), Color(0.55, 0.3, 0.12)]
-	var k := "bread|%d" % kind
-	if not _mats.has(k):
-		var m := pbr("Plaster003", 0.35, cols[kind], 0.8, k)
-		m.albedo_texture = null
-		m.albedo_color = cols[kind]
-		m.roughness = 0.72 if kind != 3 else 0.35
-		m.normal_scale = 1.6
-		_mats[k] = m
-	return _mats[k]
 
 
 var _pretzel: ArrayMesh
@@ -968,32 +738,6 @@ func pretzel_mesh() -> ArrayMesh:
 	return _pretzel
 
 
-func _bread_row(start: Vector3, n: int, row: int) -> void:
-	## Loaves on the slanted shelves: rye (dark), whole-grain, white; pretzels.
-	for k in range(n):
-		var kind := (k + row) % 4
-		var p := start + Vector3(k * 0.52, 0, 0)
-		var mi := MeshInstance3D.new()
-		if kind == 3:
-			mi.mesh = pretzel_mesh()
-			mi.rotation = Vector3(-0.55, 0, 0)
-			mi.scale = Vector3.ONE * 0.13
-			mi.position = p + Vector3(0, 0.05, 0)
-		else:
-			var sp := SphereMesh.new()
-			sp.radius = 0.5
-			sp.height = 1.0
-			sp.radial_segments = 24
-			sp.rings = 12
-			mi.mesh = sp
-			var lens := [0.36, 0.3, 0.42]
-			mi.scale = Vector3(lens[kind], 0.15, 0.2) * _rng.randf_range(0.92, 1.06)
-			mi.position = p + Vector3(0, 0.06, 0)
-			mi.rotation.y = _rng.randf_range(-0.15, 0.15)
-		mi.material_override = _bread_mat(kind)
-		add_child(mi)
-
-
 func _sound3d(file: String, pos: Vector3, bus: String, unit: float, vol: float, autoplay := true) -> AudioStreamPlayer3D:
 	var p := AudioStreamPlayer3D.new()
 	p.stream = load("res://assets/audio/sfx/%s.wav" % file)
@@ -1045,13 +789,10 @@ func _street_furniture() -> void:
 	collider(Vector3(1.4, 0.9, 0.6), Vector3(-12, 0.45, 7.4))
 	prop("painted_wooden_bench", Vector3(30, WALK_Y, -7.4), 0.0, 1.15)
 	collider(Vector3(1.4, 0.9, 0.6), Vector3(30, 0.45, -7.4))
-	prop("standing_chalkboard_01", Vector3(7.4, WALK_Y, 6.9), PI + 0.35, 0.9)
-	collider(Vector3(0.8, 1.3, 0.6), Vector3(7.4, 0.65, 6.9))
-	for pp in [Vector3(-5.5, WALK_Y, 7.55), Vector3(17.5, WALK_Y, 7.55), Vector3(-26, WALK_Y, -7.55), Vector3(21, WALK_Y, -7.55)]:
+	for pp in [Vector3(-5.5, WALK_Y, 7.55), Vector3(18.5, WALK_Y, 7.55), Vector3(-26, WALK_Y, -7.55), Vector3(21, WALK_Y, -7.55)]:
 		prop("planter_box_01", pp, 0.0, 1.3)
 	prop("utility_box_01", Vector3(-8.0, WALK_Y, -6.0), PI / 2.0, 1.2)
 	collider(Vector3(0.7, 1.3, 0.6), Vector3(-8.0, 0.65, -6.0))
-	prop("potted_plant_01", Vector3(3.3, WALK_Y, 7.55), 0.0, 0.9)
 	# wall lanterns on a few houses
 	for wl in [Vector3(-20.0, 3.4, 7.75), Vector3(24.0, 3.4, 7.75)]:
 		prop("street_lamp_02", wl, PI, 0.55)

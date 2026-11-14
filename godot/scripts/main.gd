@@ -442,6 +442,12 @@ func _demo(which: String) -> void:
 			player.cam_dist = 2.6
 			player.visible = false
 			_on_enter_bakery()
+		"shelves":
+			player.global_position = Vector3(8.6, 0.2, 11.4)
+			player.cam_yaw = PI
+			player.cam_pitch = -0.12
+			player.cam_dist = 0.6
+			player.visible = false
 		"front":
 			player.global_position = Vector3(9.0, 0.2, 0.5)
 			player.cam_yaw = PI
