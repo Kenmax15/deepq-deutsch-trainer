@@ -34,8 +34,8 @@ The mission now also runs as a **web app**: modern photos, German voices and rea
 (street, shop bell, coffee machine, till, coins, paper bag) instead of the animated 3D scene.
 Works on desktop and mobile, offline once loaded, no account.
 
-- Play: open `web/index.html` through any static web server, e.g. `cd web && python -m http.server 8000`,
-  then go to http://localhost:8000 (opening the file directly from disk blocks the mission data in most browsers).
+- Play: double-click `web/index.html` (Chrome, Edge, Firefox or Safari), or serve the folder with any static
+  web server (`cd web && python -m http.server 8000`). After editing a mission JSON, run `python tools/web_data.py`.
 - Flow: street (ask the way) → shop bell → counter with Frau Becker → choose bread, rolls, pay, bag → goodbye → summary.
 - Same mission data and evaluation rules as the 3D pilot (`web/data/brot_kaufen.json`, engine in `web/js/mission.js`):
   guided answers or free typing, hints, objectives, checkpoint and error journal saved in the browser.

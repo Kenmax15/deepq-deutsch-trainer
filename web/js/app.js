@@ -107,8 +107,8 @@
   const store = { load: () => ls.get(KEY_PROG, {}), save: (v) => ls.set(KEY_PROG, v) };
 
   async function boot() {
-    const res = await fetch("data/brot_kaufen.json");
-    mission = await res.json();
+    mission = (window.MISSIONS || {}).brot_kaufen;
+    if (!mission) mission = await (await fetch("data/brot_kaufen.json")).json();
     engine = new MissionEngine(mission, { lang: () => S.lang, store });
     wire(engine);
     applyLang();
