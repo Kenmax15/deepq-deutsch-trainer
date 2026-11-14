@@ -1,113 +1,118 @@
-# DeepQ Deutsch Trainer — Life Simulator (prototype pilote)
+# DeepQ Deutsch Trainer — Life Simulator (pilot prototype)
 
-Premier prototype jouable du **DeepQ Life Simulator**, réalisé d'après le jalon §14 et le livrable pilote §5.5
-du cahier des charges consolidé v2.0 : une rue allemande reliée à une boulangerie, un avatar joueur, une vendeuse
-et des passants, la circulation et ses bruits, et une mission complète **« Brot kaufen » (acheter du pain)**,
-niveau A1.
+First playable prototype of the **DeepQ Life Simulator**, built from milestone §14 and pilot deliverable §5.5 of the
+consolidated specification v2.0. It contains:
 
-Moteur : **Godot 4.5.1** (GDScript). Fonctionne **entièrement hors ligne** : aucun compte, aucune donnée envoyée.
+- a German street connected to a bakery;
+- a player avatar, a shop assistant and passers-by;
+- traffic and its sounds;
+- a complete A1-level mission, **"Brot kaufen" (buying bread)**.
 
-![Dialogue avec la vendeuse](docs/screenshots/04_dialogue.jpg)
+Engine: **Godot 4.5.1** (GDScript). It runs **fully offline**: no account, and no data leaves the machine.
 
-| Accueil | Rue | Bilan |
+![Talking to the shop assistant](docs/screenshots/04_dialogue.jpg)
+
+| Start screen | Street | Results |
 |---|---|---|
-| ![](docs/screenshots/01_accueil.jpg) | ![](docs/screenshots/02_rue.jpg) | ![](docs/screenshots/05_bilan.jpg) |
+| ![](docs/screenshots/01_start.jpg) | ![](docs/screenshots/02_street.jpg) | ![](docs/screenshots/05_results.jpg) |
 
-## Lancer le prototype sous Windows
+![Inside the bakery](docs/screenshots/03_bakery.jpg)
 
-1. Télécharger **Godot 4.5.1 (Standard, Windows 64 bits)** : https://godotengine.org/download/archive/4.5.1-stable/
-   (fichier zip, pas d'installation : décompresser et lancer `Godot_v4.5.1-stable_win64.exe`).
-2. Dans le gestionnaire de projets : **Importer** → choisir le fichier `godot/project.godot` de ce dossier.
-   Le premier import des modèles et des sons prend environ une minute.
-3. Appuyer sur **F5** (ou le bouton ▶ en haut à droite) pour jouer.
+## Running the prototype on Windows
 
-## Commandes
+1. Download **Godot 4.5.1 (Standard, Windows 64-bit)**: https://godotengine.org/download/archive/4.5.1-stable/
+   It is a zip with no installer: extract it and run `Godot_v4.5.1-stable_win64.exe`. Later 4.x versions also work.
+2. In the Project Manager, click **Import** and choose `godot/project.godot` in this folder.
+   The first import of the models and sounds takes about a minute.
+3. Press **F5** (or the ▶ button at the top right) to play.
 
-| Action | Touche |
+## Controls
+
+| Action | Key |
 |---|---|
-| Se déplacer | ZQSD (AZERTY) / WASD (QWERTY) ou flèches |
-| Courir | Maj |
-| Tourner la caméra / zoom | clic droit maintenu + souris / molette |
-| Parler (vendeuse, passant) | E ou Espace |
-| Indice de Qubi | H |
-| Réécouter la dernière phrase | R |
-| Menu des réglages / pause | Échap |
+| Move | WASD (QWERTY) / ZQSD (AZERTY) or arrow keys |
+| Run | Shift |
+| Orbit camera / zoom | hold right mouse button + move / mouse wheel |
+| Talk (shop assistant, passer-by) | E or Space |
+| Hint from Qubi | H |
+| Replay the last line | R |
+| Settings / pause | Esc |
 
-## Ce que contient le pilote (§5.5)
+## What the pilot contains (§5.5)
 
-| Exigence du cahier des charges | Réalisation |
+| Specification requirement | Implementation |
 |---|---|
-| Rue allemande + boulangerie connectées | « Lindenstraße » avec immeubles, trottoirs, lampadaires, bancs, plaque de rue ; boulangerie Becker avec vitrine, auvent, enseigne, intérieur meublé (comptoir vitré, étagères de pains et de bretzels, caisse, machine à café, ardoise des prix). On entre par la porte, la clochette sonne. |
-| Avatar joueur, vendeuse et quelques PNJ | Personnages humains riggés et animés (marche, course, repos, salut de la main, geste en parlant) issus des packs CC0 *Ultimate Modular Men/Women* de Quaternius. Avatar en 3ᵉ personne (sweat à capuche) ; Frau Becker derrière le comptoir ; 4 passants qui marchent, s'arrêtent, regardent le joueur, saluent (« Guten Morgen! », « Hallo! ») ; un client dans la boutique. Un passant indique le chemin quand on lui parle. |
-| Circulation et bruits | Véhicules sur les deux voies avec moteur **spatialisé et effet Doppler** (une voiture qui approche devient plus audible puis s'éloigne), klaxons occasionnels, ambiance de rue, murmure de foule, oiseaux ; dans la boutique : radio, machine à café, caisse enregistreuse, clochette. La rue est assourdie quand on est à l'intérieur. |
-| Mission complète « acheter du pain » | 6 objectifs : entrer, saluer et commander, choisir un pain, répondre à « Sonst noch etwas? », payer le bon montant (compréhension orale des prix), prendre congé. |
-| Dialogues en allemand | 23 répliques enregistrées en voix de synthèse allemande (voix féminine pour la vendeuse, masculine pour les passants et les réponses modèles), chacune en version **normale** et **lente**. |
-| Réponses guidées ou libres | Choix A/B/C/D **ou** saisie libre au clavier (touches ä ö ü ß à l'écran). Les réponses libres sont analysées hors ligne par des règles (salutation, article, pluriel, politesse, montant) ; les fautes d'umlaut tapé sans clavier allemand sont tolérées. |
-| Aide de Qubi | Mascotte (sphère de Bloch avec antenne-vecteur d'état) : accueil, consignes, indices adaptés à chaque étape, encouragements sans culpabilisation. |
-| Trois modes (§5.4) | **Apprentissage** (Qubi donne l'indice à chaque étape, traduction affichée), **Mission** (indice sur demande, noté sans pénalité), **Vie réelle** (pas de Qubi ni de traduction par défaut, saisie libre d'abord, réponses guidées en secours, ambiance dense). |
-| Réglages audio (§5.3) | Volumes séparés : général, voix, bruitages, ambiance, musique. Ambiance sonore Facile (bruit réduit) / Normale / Immersion dense. **Atténuation automatique** de l'ambiance et de la musique pendant les répliques pédagogiques (priorité à l'intelligibilité). Sous-titres allemands et traduction activables. |
-| Retour pédagogique | Feedback immédiat expliqué (vert / orange / rouge), bouton « Écouter un modèle » ; bilan final : réussite du premier coup, indices utilisés, erreurs commentées par catégorie, vocabulaire (avec pluriels) et points de grammaire. |
-| Sauvegarde | Fichier local `user://deepq_save.json` (sous Windows : `%APPDATA%\Godot\app_userdata\DeepQ Deutsch Trainer – Life Simulator (Pilot)\`) : réglages, point de reprise à chaque étape, missions terminées, meilleur score, **journal des erreurs**, vocabulaire rencontré. « Reprendre » relance la mission là où on l'avait laissée. |
-| Plusieurs niveaux de qualité graphique (§5.1) | Basse / Moyenne / Élevée (ombres, anticrénelage, échelle de rendu, occlusion ambiante). |
-| Interface FR/EN | Toute l'interface et les traductions existent en français et en anglais. |
+| German street + bakery, connected | The street is "Lindenstraße", with apartment blocks, pavements, street lamps, benches and a street sign.<br>Bäckerei Becker has a shop window, an awning, a sign and a furnished interior: glass counter, shelves of bread and pretzels, till, coffee machine and a price board.<br>You enter through the door, and the bell rings. |
+| Player avatar, shop assistant and a few NPCs | Characters are rigged and animated humans from Quaternius' CC0 *Ultimate Modular Men/Women* packs. They walk, run, idle, wave and gesture while speaking.<br>The player is a third-person avatar in a hoodie, and Frau Becker stands behind the counter.<br>Four passers-by walk, stop, look at the player and greet them ("Guten Morgen!", "Hallo!"). One gives directions when spoken to.<br>One more customer is inside the shop. |
+| Traffic and sounds | Vehicles drive in both lanes. Their engines are **spatialised with Doppler**, so a car gets louder as it approaches and fades as it drives off.<br>The street also has occasional horns, ambience, crowd murmur and birds.<br>The shop has a radio, a coffee machine, a till and a door bell. Street noise is muffled indoors. |
+| Complete "buy bread" mission | Six objectives:<br>1. Enter the shop.<br>2. Greet the assistant and order.<br>3. Choose a bread.<br>4. Answer "Sonst noch etwas?".<br>5. Pay the right amount, which tests listening comprehension of prices.<br>6. Say goodbye. |
+| Dialogue in German | 23 lines are voiced with German speech synthesis. The shop assistant has a female voice; passers-by and model answers have a male voice.<br>Each line has a **normal** and a **slow** version. |
+| Guided or free answers | Answer by choosing A/B/C/D **or** by typing freely, with on-screen ä ö ü ß keys.<br>Free answers are checked offline by rules covering greeting, article, plural, politeness and amount.<br>Umlauts typed without a German keyboard (ae, oe, ue) are accepted. |
+| Help from Qubi | Qubi is the mascot, a Bloch sphere with a state-vector antenna.<br>It welcomes the player, gives instructions and step-specific hints, and encourages without guilt-tripping. |
+| Three modes (§5.4) | **Learning**: Qubi gives a hint at every step, and the translation is shown.<br>**Mission**: hints are available on request and recorded without penalty.<br>**Real life**: no Qubi or translation by default. Free typing comes first, with guided answers as a fallback, and the ambience is dense. |
+| Audio settings (§5.3) | Separate volumes for master, voice, SFX, ambience and music.<br>Ambience presets are Easy (reduced noise), Normal and Dense immersion.<br>Ambience and music are **ducked automatically** during teaching lines, so speech stays intelligible.<br>German subtitles and the translation can be switched on or off. |
+| Learning feedback | Each answer gets immediate, explained feedback in green, orange or red, plus a "Listen to a model answer" button.<br>The end-of-mission report shows first-try success, hints used, errors explained by category, vocabulary (with plurals) and grammar points. |
+| Saving | Everything is stored in the local file `user://deepq_save.json`. On Windows, that is `%APPDATA%\Godot\app_userdata\DeepQ Deutsch Trainer – Life Simulator (Pilot)\`.<br>It holds the settings, a checkpoint at every step, completed missions, the best score, an **error log** and the vocabulary met.<br>"Resume" restarts the mission where you left off. |
+| Several graphics quality levels (§5.1) | Low, Medium and High, which change shadows, anti-aliasing, render scale and ambient occlusion. |
+| FR/EN interface | The whole interface and every translation exist in French and English. |
 
-### Ce qui reste provisoire
+### What is still provisional
 
-- **Personnages** : modèles low-poly stylisés (Quaternius, CC0), crédibles mais pas encore « très réalistes » au
-  sens du §5.1. Ils passent par une interface commune (`set_walk_speed`, `talk`, `wave`) : on pourra les remplacer
-  par des avatars réalistes sans toucher à la logique. Les silhouettes procédurales de `humanoid.gd` restent comme
-  solution de repli si un modèle manque.
-- **Synchronisation labiale** : non réalisée (à valider sur prototype selon le §5.4).
-- **Réponses orales** : la saisie est textuelle ; la reconnaissance vocale locale (STT) est prévue en phase 2.0.
-- **Android** : le projet est configuré pour le moteur de rendu mobile, mais les commandes tactiles et l'export APK
-  restent à faire.
-- **Contenu** : relecture pédagogique par un enseignant d'allemand à prévoir (statut `draft-to-review` dans le JSON).
+- **Characters**: the models are stylised low-poly (Quaternius, CC0). They are believable, but not yet "highly realistic" as §5.1 asks.
+  - They go through a common interface (`set_walk_speed`, `talk`, `wave`), so realistic avatars can replace them without touching the game logic.
+  - The procedural figures in `humanoid.gd` remain as a fallback in case a model is missing.
+- **Lip sync**: not implemented yet. §5.4 says to validate it on a prototype first.
+- **Spoken answers**: answers are typed for now. Local speech recognition (STT) is planned for phase 2.0.
+- **Android**: the project already uses the mobile renderer on Android. Touch controls and the APK export are still to do.
+- **Content**: a German teacher still needs to review it. Its status in the JSON is `draft-to-review`.
 
-## Recette (§12)
+## Acceptance tests (§12)
 
-| ID | Test | État dans le pilote |
+| ID | Test | Status in the pilot |
 |---|---|---|
-| R01 | Sans Internet | ✔ aucune ressource réseau |
-| R07 | Pilote 3D : déplacement rue-boulangerie, mission et interaction PNJ jouables | ✔ |
-| R08 | Audio 3D : voix intelligibles, bruitage contextuel, volumes séparés | ✔ (atténuation automatique pendant les voix) |
-| R10 | Sauvegarde | ✔ point de reprise par étape (synchronisation : hors périmètre du pilote) |
+| R01 | Works without Internet | ✔ no network resources |
+| R07 | 3D pilot: walking between street and bakery, mission and NPC interaction are playable | ✔ |
+| R08 | 3D audio: intelligible voices, contextual sound effects, separate volumes | ✔ (automatic ducking during speech) |
+| R10 | Saving | ✔ checkpoint at every step (sync is out of scope for the pilot) |
 
-Tests automatiques de la logique de mission (32 vérifications : parcours parfait, erreurs, réponses libres,
-paiement, indices, reprise) :
+Automated tests of the mission logic run 32 checks. They cover a perfect run, mistakes, free answers, payment, hints and resuming:
 
 ```
 godot --headless --path godot res://tests/test_mission.tscn
 ```
 
-## Structure
+## Project layout
 
 ```
-godot/                         projet Godot (ouvrir godot/project.godot)
-  data/missions/brot_kaufen.json   contenu pédagogique : répliques, traductions, réponses, règles, vocabulaire
-  scripts/main.gd              orchestration (monde, PNJ, voix, mission, interface)
-  scripts/mission_runner.gd    logique de mission pilotée par les données (sans dépendance 3D, testable)
-  scripts/world.gd             rue + boulangerie
+godot/                         Godot project (open godot/project.godot)
+  data/missions/brot_kaufen.json   teaching content: lines, translations, answers, rules, vocabulary
+  scripts/main.gd              orchestration (world, NPCs, voices, mission, UI)
+  scripts/mission_runner.gd    data-driven mission logic (no 3D dependency, testable)
+  scripts/world.gd             street + bakery
   scripts/player.gd, npc.gd, vehicle.gd
-  scripts/character_model.gd   personnages riggés (Quaternius) ; humanoid.gd = repli procédural
-  scripts/audio_director.gd    ambiances, presets d'immersion, atténuation des voix
-  scripts/hud.gd, qubi.gd      interface, Qubi
-  scripts/game_state.gd        réglages, sauvegarde locale, journal d'erreurs
-  assets/kenney/               décors et véhicules (CC0)
-  assets/quaternius/           personnages riggés et animés (CC0)
-  assets/audio/                sons synthétisés + voix allemandes générées
-  tests/                       tests automatiques
-tools/gen_sfx.py               régénère tous les bruitages et ambiances (numpy)
-tools/gen_voices.py            régénère les voix d'une mission à partir du JSON (Piper TTS)
-docs/screenshots/              captures
-ASSETS.md                      provenance et licences de toutes les ressources
+  scripts/character_model.gd   rigged characters (Quaternius); humanoid.gd = procedural fallback
+  scripts/audio_director.gd    ambiences, immersion presets, voice ducking
+  scripts/hud.gd, qubi.gd      user interface, Qubi
+  scripts/game_state.gd        settings, local save, error log
+  assets/kenney/               scenery and vehicles (CC0)
+  assets/quaternius/           rigged, animated characters (CC0)
+  assets/audio/                synthesised sounds + generated German voices
+  tests/                       automated tests
+tools/gen_sfx.py               regenerates all sound effects and ambiences (numpy)
+tools/gen_voices.py            regenerates a mission's voices from its JSON (Piper TTS)
+docs/screenshots/              screenshots
+ASSETS.md                      origin and licence of every asset
 ```
 
-Ajouter une mission = écrire un nouveau fichier JSON sur le modèle de `brot_kaufen.json`, générer ses voix avec
-`tools/gen_voices.py`, puis placer le décor et le PNJ.
+To add a mission:
 
-## Prochaines étapes proposées
+1. Write a new JSON file modelled on `brot_kaufen.json`.
+2. Generate its voices with `tools/gen_voices.py`.
+3. Place the scenery and the NPC.
 
-1. Avatar personnalisable (choix parmi les tenues Quaternius), puis passage à des avatars plus réalistes.
-2. Commandes tactiles et export Android ; export Windows (.exe).
-3. Relecture du contenu par un enseignant, puis deuxième scène (gare ou café).
-4. Brancher le DeepQ Tutor local (Ollama / llama.cpp) pour évaluer les réponses libres non prévues par les règles.
+## Suggested next steps
+
+1. Avatar customisation (choice among the Quaternius outfits), then a move to more realistic avatars.
+2. Touch controls and the Android export; Windows (.exe) export.
+3. Teacher review of the content, then a second scene (train station or café).
+4. Connect the local DeepQ Tutor (Ollama / llama.cpp) to assess free answers the rules do not cover.
