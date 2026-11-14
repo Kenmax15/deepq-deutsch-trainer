@@ -1,549 +1,205 @@
-/* DeepQ Deutsch Trainer — web edition: scenes, dialogue UI, sound. */
+/* DeepQ Deutsch Trainer — app shell: data, routing, layout, session time, reminders. */
 (function () {
   "use strict";
-  const $ = (id) => document.getElementById(id);
-  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const DQ = window.DQ;
+  const { h, _ } = DQ;
+  const S = DQ.store;
 
-  // ------------------------------------------------------------ storage
-  const KEY_SET = "dqdt.settings", KEY_PROG = "dqdt.progress";
-  const ls = {
-    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+  // ------------------------------------------------------------- data
+  const D = window.DQ_DATA;
+  DQ.lexicon = DQ.lex.build(D);
+  DQ.byId = new Map(DQ.lexicon.map((e) => [e.id, e]));
+  DQ.forms = DQ.lex.indexForms(DQ.lexicon, DQ.conj);
+  DQ.verbIndex = DQ.conj.index(D.verbs);
+  /** All entries including the learner's personal words. */
+  DQ.allEntries = () => {
+    const p = S.profile();
+    return DQ.lexicon.concat(((p && p.personal) || []).map((w) => Object.assign({ personal: true }, w)));
   };
-  const navLang = (navigator.language || "fr").slice(0, 2) === "fr" ? "fr" : (navigator.language || "").startsWith("en") ? "en" : "fr";
-  const S = Object.assign({ lang: navLang, mode: "learning", imm: "easy", capt: true, trans: true, subs: true, muted: false, vVoice: 1, vSfx: 0.8, vAmb: 0.5 }, ls.get(KEY_SET, {}));
-  const saveSettings = () => ls.set(KEY_SET, S);
-  const T = (k) => { const e = window.I18N[k]; return e ? (e[S.lang] || e.en) : k; };
-
-  // -------------------------------------------------------------- audio
-  // Soundscape levels (§5.3): ambience gain, how often background events happen,
-  // and how much the ambience ducks under a voice so dialogue stays intelligible.
-  const LEVELS = {
-    easy: { amb: 0.45, events: 0.5, duck: 0.25 },
-    normal: { amb: 1.0, events: 1.0, duck: 0.45 },
-    dense: { amb: 1.6, events: 1.8, duck: 0.75 },
+  DQ.entry = (id) => DQ.byId.get(id) || (((S.profile() || {}).personal || []).find((w) => w.id === id));
+  DQ.CATS = {
+    people: ["Personnes & famille", "People & family"], food: ["Manger & boire", "Food & drink"], bakery: ["Boulangerie", "Bakery"],
+    shopping: ["Courses & argent", "Shopping & money"], home: ["Logement", "Home"], town: ["Ville & transports", "Town & transport"],
+    time: ["Temps & calendrier", "Time & calendar"], body: ["Corps & santé", "Body & health"], clothes: ["Vêtements", "Clothes"],
+    work: ["Travail & école", "Work & school"], leisure: ["Loisirs", "Leisure"], nature: ["Nature & météo", "Nature & weather"],
+    animals: ["Animaux", "Animals"], communication: ["Communication", "Communication"], verbs: ["Verbes", "Verbs"],
+    adjectives: ["Adjectifs", "Adjectives"], colours: ["Couleurs", "Colours"], adverbs: ["Adverbes", "Adverbs"],
+    phrases: ["Expressions", "Phrases"], numbers: ["Nombres", "Numbers"], personal: ["Mes mots", "My words"],
   };
-  // Background events per place: [sound, min s, max s, gain]
-  const SCENES = {
-    street: { amb: "street_amb", once: [["church_bell", 3, 0.8]], events: [["car_pass", 14, 34, 0.8], ["bike_bell", 20, 50, 0.7]] },
-    bakery: { amb: "bakery_amb", once: [], events: [["coffee_machine", 22, 45, 0.45], ["cup", 9, 24, 0.8], ["teaspoon", 12, 30, 0.7], ["bread_knife", 18, 40, 0.8]] },
-  };
-  const Snd = {
-    voiceEl: null, queue: [], busy: false, amb: null, ambSrc: "", timers: [], ducked: false,
-    lvl() { return LEVELS[S.imm] || LEVELS.normal; },
-    vol(kind) {
-      if (S.muted) return 0;
-      if (kind === "voice") return S.vVoice;
-      if (kind === "amb") return Math.min(1, S.vAmb * this.lvl().amb * (this.ducked ? this.lvl().duck : 1));
-      return S.vSfx;
-    },
-    sfx(name, gain = 1, bg) {
-      const a = new Audio("audio/sfx/" + name + ".mp3");
-      const g = bg ? Math.min(1, this.lvl().amb) * (this.ducked ? this.lvl().duck : 1) : 1;
-      a.volume = Math.min(1, this.vol("sfx") * gain * g);
-      a.play().catch(() => {});
-      if (window.I18N["cap_" + name]) caption(T("cap_" + name));
-      return a;
-    },
-    /** Queue voice lines; resolves when this line has finished. */
-    say(id, slow) {
-      return new Promise((resolve) => { this.queue.push({ id, slow, resolve }); this.next(); });
-    },
-    duck(on) {
-      if (this.ducked === on) return;
-      this.ducked = on;
-      if (this.amb) fade(this.amb.cur, this.vol("amb"), on ? 300 : 900);
-    },
-    next() {
-      if (this.busy) return;
-      if (!this.queue.length) { this.duck(false); return; }
-      const { id, slow, resolve } = this.queue.shift();
-      this.busy = true;
-      this.duck(true);
-      const a = new Audio("audio/voice/" + id + (slow ? "_slow" : "") + ".mp3");
-      this.voiceEl = a;
-      a.volume = this.vol("voice");
-      markSpeaking(id, true);
-      const done = () => { if (this.voiceEl !== a) return; markSpeaking(id, false); this.busy = false; this.voiceEl = null; resolve(); this.next(); };
-      a.onended = done; a.onerror = done;
-      a.play().catch(done);
-    },
-    stopVoice() {
-      this.queue.forEach((q) => q.resolve());
-      this.queue = [];
-      if (this.voiceEl) { const a = this.voiceEl; this.voiceEl = null; a.pause(); this.busy = false; document.querySelectorAll(".pill.speaking").forEach((p) => p.classList.remove("speaking")); }
-      this.duck(false);
-    },
-    /** Looping ambience with a soft cross-fade between two players. */
-    ambience(name) {
-      if (this.ambSrc === name) return;
-      this.ambSrc = name;
-      const old = this.amb;
-      if (old) fade(old.cur, 0, 1200, () => { old.stop(); });
-      if (!name) { this.amb = null; return; }
-      const src = "audio/sfx/" + name + ".mp3";
-      const make = () => { const a = new Audio(src); a.preload = "auto"; return a; };
-      const st = { cur: make(), other: make(), timer: 0, stop() { clearInterval(this.timer); this.cur.pause(); this.other.pause(); } };
-      st.cur.volume = 0;
-      st.cur.play().catch(() => {});
-      fade(st.cur, this.vol("amb"), 1500);
-      st.timer = setInterval(() => {
-        const a = st.cur;
-        if (a.duration && a.currentTime > a.duration - 2.1 && st.other.paused) {
-          st.other.currentTime = 0; st.other.volume = this.vol("amb"); st.other.play().catch(() => {});
-          setTimeout(() => { a.pause(); }, 2300);
-          [st.cur, st.other] = [st.other, a];
-        }
-      }, 250);
-      this.amb = st;
-    },
-    /** Ambience plus random background events for a place (null = silence). */
-    scene(name) {
-      this.timers.forEach(clearTimeout);
-      this.timers = [];
-      const sc = SCENES[name];
-      this.ambience(sc ? sc.amb : "");
-      if (!sc) return;
-      sc.once.forEach(([snd, at, g]) => this.timers.push(setTimeout(() => this.sfx(snd, g, true), at * 1000)));
-      sc.events.forEach(([snd, min, max, g]) => {
-        const plan = (first) => {
-          const k = this.lvl().events;
-          const t = ((first ? min * 0.4 : min) + Math.random() * (max - min)) / k;
-          this.timers.push(setTimeout(() => { if (!this.busy || S.imm === "dense") this.sfx(snd, g, true); plan(false); }, t * 1000));
-        };
-        plan(true);
-      });
-    },
-    refreshVolumes() {
-      if (this.amb) this.amb.cur.volume = this.vol("amb");
-      if (this.voiceEl) this.voiceEl.volume = this.vol("voice");
-    },
-  };
-  let capTimer = 0;
-  function caption(text) {
-    if (!S.capt) return;
-    const box = $("captions");
-    const c = el("div", "cap", esc(text));
-    box.appendChild(c);
-    while (box.children.length > 2) box.firstChild.remove();
-    clearTimeout(capTimer);
-    setTimeout(() => c.classList.add("out"), 2600);
-    setTimeout(() => c.remove(), 3200);
-  }
-  function fade(a, to, ms, cb) {
-    const from = a.volume, t0 = performance.now();
-    const step = (t) => { const k = Math.min(1, (t - t0) / ms); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k < 1) requestAnimationFrame(step); else if (cb) cb(); };
-    requestAnimationFrame(step);
-  }
-  function markSpeaking(id, on) {
-    document.querySelectorAll('.pill[data-line="' + id + '"]').forEach((p) => p.classList.toggle("speaking", on));
-  }
+  DQ.catName = (c) => { const n = DQ.CATS[c] || [c, c]; return _(n[0], n[1]); };
 
-  // ------------------------------------------------------------- scenes
-  let bgFront = $("bgA"), bgBack = $("bgB");
-  function setBg(name) {
-    const url = "url(img/" + name + ".webp)";
-    if (bgFront.style.backgroundImage === url) return;
-    bgBack.style.backgroundImage = url;
-    bgBack.classList.add("on");
-    bgFront.classList.remove("on");
-    [bgFront, bgBack] = [bgBack, bgFront];
+  // ------------------------------------------------------------- routes & navigation
+  DQ.routes = DQ.routes || {};
+  const NAV = [
+    ["sep", "Aujourd’hui", "Today"],
+    ["home", "🏠", "Accueil", "Home"], ["review", "🔁", "Réviser", "Review"],
+    ["sep", "Apprendre", "Learn"],
+    ["dict", "📖", "Dictionnaire illustré", "Picture dictionary"], ["cards", "🃏", "Flashcards", "Flashcards"],
+    ["grammar", "📘", "Grammatikbuch", "Grammar book"], ["conj", "🔤", "Conjugaison", "Conjugation"],
+    ["build", "🧩", "Construire des phrases", "Build sentences"], ["families", "🌳", "Familles de mots", "Word families"],
+    ["read", "📰", "Lecture intelligente", "Smart reading"], ["think", "💭", "Penser en allemand", "Think in German"],
+    ["pron", "🎙️", "Prononciation", "Pronunciation"],
+    ["sep", "Pratiquer", "Practise"],
+    ["quiz", "🎮", "Quiz Arena", "Quiz Arena"], ["sim", "🥨", "Life Simulator", "Life Simulator"], ["tutor", "🧑‍🏫", "DeepQ Tutor", "DeepQ Tutor"],
+    ["sep", "Suivi", "Progress"],
+    ["stats", "📊", "Progression", "Progress"], ["journal", "📒", "Journal des erreurs", "Error journal"],
+    ["test", "🎯", "Test de niveau", "Placement test"], ["profile", "⚙️", "Profil & réglages", "Profile & settings"],
+  ];
+  DQ.NAV = NAV;
+  const TABS = [["home", "🏠", "Accueil", "Home"], ["learn", "📚", "Apprendre", "Learn"], ["review", "🔁", "Réviser", "Review"], ["quiz", "🎮", "Jouer", "Play"], ["profile", "👤", "Moi", "Me"]];
+
+  function parseHash() {
+    const raw = location.hash.replace(/^#\/?/, "");
+    const [path, query] = raw.split("?");
+    const parts = path.split("/").filter(Boolean);
+    const params = Object.fromEntries(new URLSearchParams(query || ""));
+    return { route: parts[0] || "home", args: parts.slice(1).map(decodeURIComponent), params };
   }
+  DQ.go = (r) => { location.hash = "#/" + r; };
 
-  // ---------------------------------------------------------- mission
-  let mission = null, engine = null, kind = "say", ended = false;
-  const store = { load: () => ls.get(KEY_PROG, {}), save: (v) => ls.set(KEY_PROG, v) };
-
-  async function boot() {
-    mission = (window.MISSIONS || {}).brot_kaufen;
-    if (!mission) mission = await (await fetch("data/brot_kaufen.json")).json();
-    engine = new MissionEngine(mission, { lang: () => S.lang, store });
-    wire(engine);
-    applyLang();
-    setBg("breadstack");
-    document.body.classList.add("title-mode");
-    $("resumeBtn").hidden = !engine.hasCheckpoint();
-  }
-
-  function applyLang() {
-    document.documentElement.lang = S.lang;
-    document.querySelectorAll("[data-i18n]").forEach((n) => { n.textContent = T(n.dataset.i18n); });
-    document.querySelectorAll(".lang-switch button").forEach((b) => b.classList.toggle("on", b.dataset.lang === S.lang));
-    if (mission) {
-      $("goalText").textContent = MissionEngine.pick(mission.goal, S.lang);
-      renderObjectives();
+  let pageCleanup = null;
+  function render() {
+    DQ.stop();
+    if (pageCleanup) { try { pageCleanup(); } catch (e) { /* ignore */ } pageCleanup = null; }
+    const p = S.profile();
+    const { route, args, params } = parseHash();
+    if (!p && route !== "onboarding") { DQ.go("onboarding"); return; }
+    document.documentElement.lang = (p && p.lang) || "fr";
+    const app = document.getElementById("app");
+    app.innerHTML = "";
+    if (route === "onboarding") { app.appendChild(h("main.page", { style: { maxWidth: "640px" } }, DQ.routes.onboarding(args, params))); return; }
+    const mod = DQ.routes[route] || DQ.routes.home;
+    const navItem = NAV.find((n) => n[0] === route);
+    const title = navItem ? _(navItem[2], navItem[3]) : route === "learn" ? _("Apprendre", "Learn") : "";
+    const page = h("section.page");
+    const layout = h("div.layout",
+      h("aside.side",
+        h("div.brand", DQ.qubiFace("", 30), "DeepQ Deutsch Trainer"),
+        h("nav", NAV.map((n) => n[0] === "sep" ? h("div.sep", _(n[1], n[2])) :
+          h("a" + (n[0] === route ? ".on" : ""), { href: "#/" + n[0] }, h("span", n[1]), _(n[2], n[3]))))),
+      h("main.main",
+        h("header.top", h("div.title", title), sessionPill(), h("button.icon-btn", { title: _("Profil", "Profile"), onclick: () => DQ.go("profile") }, "👤")),
+        page),
+      h("nav.tabs", TABS.map((t) => h("a" + (t[0] === route || (t[0] === "learn" && !["home", "review", "quiz", "profile"].includes(route)) ? ".on" : ""), { href: "#/" + t[0] }, h("span", t[1]), _(t[2], t[3])))));
+    app.appendChild(layout);
+    try {
+      const out = mod(args, params, (fn) => { pageCleanup = fn; });
+      if (out) page.appendChild(out);
+    } catch (err) {
+      console.error(err);
+      page.appendChild(h("div.card", h("b", _("Oups, une erreur est survenue.", "Oops, something went wrong.")), h("pre.small", String(err && err.message))));
     }
-    $("freeInput").placeholder = T(kind === "pay" ? "your_amount" : "your_answer");
-    [...$("setMode").options].forEach((o) => { o.textContent = T("mode_" + o.value); });
-    [...$("setImm").options].forEach((o) => { o.textContent = T("imm_" + o.value); });
-    document.querySelectorAll('#modes input').forEach((r) => { r.checked = r.value === S.mode; });
-    renderSound();
+    window.scrollTo(0, 0);
   }
+  DQ.render = render;
 
-  function renderSound() {
-    $("soundBtn").innerHTML = S.muted
-      ? '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m22 9-6 6M16 9l6 6"/></svg>'
-      : '<svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-    $("soundBtn").setAttribute("aria-label", T(S.muted ? "sound_off" : "sound_on"));
-  }
+  // learn hub (mobile tab) — every module as a tile
+  DQ.MODULE_INFO = {
+    dict: ["Mots illustrés, articles, pluriels, audio", "Pictures, articles, plurals, audio"],
+    cards: ["Recto-verso, article, pluriel, phrases à trous", "Front/back, article, plural, gap sentences"],
+    grammar: ["13 leçons A1 avec tableaux et exercices", "13 A1 lessons with tables and exercises"],
+    conj: ["Tous les temps, cherche aussi une forme conjuguée", "All tenses, also search a conjugated form"],
+    build: ["Remets les mots dans l’ordre", "Put the words in order"],
+    families: ["Mots de la même famille", "Words from the same family"],
+    read: ["Textes cliquables et questions", "Clickable texts and questions"],
+    think: ["Décris, raconte, réponds en allemand", "Describe, tell, answer in German"],
+    pron: ["Écoute, enregistre-toi, compare", "Listen, record yourself, compare"],
+    quiz: ["Mini-jeux rapides, chrono, duel avec Qubi", "Quick games, timer, duel with Qubi"],
+    sim: ["Missions en images et en sons", "Missions in pictures and sound"],
+    tutor: ["Pose tes questions, fais-toi corriger", "Ask questions, get corrected"],
+    stats: ["Ta progression et ton bilan de la semaine", "Your progress and weekly review"],
+    journal: ["Tes erreurs et des exercices ciblés", "Your mistakes and targeted practice"],
+    test: ["Trouve ton niveau (A1–C1)", "Find your level (A1–C1)"],
+    review: ["Révisions espacées du jour", "Today’s spaced reviews"],
+    profile: ["Profils, temps, rappels, sauvegarde", "Profiles, time, reminders, backup"],
+    home: ["Tableau de bord", "Dashboard"],
+  };
+  DQ.routes.learn = () => h("div.stack",
+    h("h1", _("Apprendre", "Learn")),
+    h("div.grid.g3", NAV.filter((n) => n[0] !== "sep" && n[0] !== "home").map((n) =>
+      h("a.tile", { href: "#/" + n[0] }, h("div.ic", n[1]), h("b", _(n[2], n[3])), h("span", _(...(DQ.MODULE_INFO[n[0]] || ["", ""])))))));
 
-  function renderObjectives() {
-    const done = engine ? engine.done : [];
-    $("objDots").innerHTML = mission.objectives.map((o) => '<i class="' + (done.includes(o.id) ? "done" : "") + '"></i>').join("");
-    $("objLabel").textContent = T("objectives") + " " + done.length + "/" + mission.objectives.length;
-    $("objTitle").textContent = T("objectives") + " · " + MissionEngine.pick(mission.title, S.lang);
-    $("objList").innerHTML = mission.objectives.map((o) => '<li class="' + (done.includes(o.id) ? "done" : "") + '">' + esc(MissionEngine.pick(o, S.lang)) + "</li>").join("");
-  }
-
-  // ------------------------------------------------------------- dialogue UI
-  const log = () => $("log");
-  function scrollLog() { const l = log(); requestAnimationFrame(() => { l.scrollTop = l.scrollHeight; }); }
-
-  let qubiKind = "";
-  function qubi(text, k) {
-    if (S.mode === "real" && ["cheer", "oops", "pay", "way"].includes(k)) return;
-    if (S.mode === "mission" && k === "cheer") return;
-    qubiKind = k || "";
-    $("qubiText").textContent = text;
-    const b = $("qubiBubble");
-    b.hidden = false;
-    b.style.animation = "none"; void b.offsetWidth; b.style.animation = "";
-  }
-
-  function speakerOf(id) { return id.startsWith("p_") ? "passerby" : id.startsWith("m_") ? "model" : "seller"; }
-
-  function npcMessage(id, line) {
-    const who = speakerOf(id);
-    const m = el("div", "msg");
-    const av = el("div", "av");
-    if (who === "seller") av.style.backgroundImage = "url(img/avatar_seller.webp)";
-    else av.textContent = "👤";
-    const body = el("div", "body");
-    body.appendChild(el("div", "who", esc(T(who))));
-    const de = el("div", "de" + (S.subs ? "" : " veiled"), esc(line.de || ""));
-    de.title = S.subs ? "" : "👁";
-    de.addEventListener("click", () => de.classList.remove("veiled"));
-    body.appendChild(de);
-    const tr = el("div", "tr", esc(line[S.lang] || ""));
-    tr.hidden = !S.trans || !line[S.lang];
-    body.appendChild(tr);
-    const ctl = el("div", "ctl");
-    const rep = el("button", "pill", "▶ " + esc(T("replay")));
-    rep.dataset.line = id;
-    rep.onclick = () => { Snd.stopVoice(); Snd.say(id, false); };
-    const slow = el("button", "pill", "🐢 " + esc(T("slow")));
-    slow.onclick = () => { Snd.stopVoice(); Snd.say(id, true); };
-    ctl.append(rep, slow);
-    if (!S.trans && line[S.lang]) {
-      const tb = el("button", "pill", "💬");
-      tb.title = T("translation");
-      tb.onclick = () => { tr.hidden = !tr.hidden; };
-      ctl.append(tb);
-    }
-    body.appendChild(ctl);
-    m.append(av, body);
-    log().appendChild(m);
-    scrollLog();
-    Snd.say(id, false);
-  }
-
-  function myMessage(text) {
-    const m = el("div", "msg me");
-    m.append(el("div", "av", S.lang === "fr" ? "Moi" : "Me"));
-    const b = el("div", "body");
-    b.appendChild(el("div", "de", esc(text)));
-    m.appendChild(b);
-    log().appendChild(m);
-    scrollLog();
-  }
-
-  function feedback(result, text, model) {
-    const f = el("div", "fb " + result);
-    f.appendChild(el("b", "", esc(T(result))));
-    f.appendChild(el("div", "", esc(text || T("not_understood"))));
-    if (model && result !== "correct") {
-      const line = engine.line(model);
-      const row = el("div", "model");
-      const b = el("button", "pill", "▶ " + esc(T("hear_model")));
-      b.dataset.line = model;
-      b.onclick = () => { Snd.stopVoice(); Snd.say(model, false); };
-      row.append(b, el("em", "", esc(line.de || "")));
-      f.appendChild(row);
-    }
-    log().appendChild(f);
-    scrollLog();
-  }
-
-  function renderChoices(opts, k) {
-    kind = k;
-    $("answer").hidden = false;
-    $("sceneActions").innerHTML = "";
-    $("answerLabel").textContent = T(k === "pay" ? "how_much" : "say");
-    const box = $("choices");
-    box.className = "choices" + (k === "pay" ? " pay" : "");
-    box.innerHTML = "";
-    opts.forEach((o, i) => {
-      const b = el("button", "choice", "<kbd>" + (i + 1) + "</kbd><span>" + esc(o) + "</span>");
-      b.onclick = () => answerChoice(i, o);
-      box.appendChild(b);
-    });
-    $("freeInput").placeholder = T(k === "pay" ? "your_amount" : "your_answer");
-    $("freeInput").value = "";
-    const hideGuided = S.mode === "real";
-    box.hidden = hideGuided;
-    $("showGuided").hidden = !hideGuided;
-    if (hideGuided && !matchMedia("(hover: none)").matches) setTimeout(() => $("freeInput").focus(), 50);
-  }
-
-  function answerChoice(i, label) {
-    if (ended) return;
-    Snd.sfx("ui_click", 0.6);
-    lockAnswers();
-    myMessage(label);
-    if (kind === "pay") engine.pay(label); else engine.choose(i);
-  }
-
-  function lockAnswers() { $("answer").hidden = true; Snd.stopVoice(); }
-
-  // context cards for the current step
-  function showContext(nodeId) {
-    const c = $("context");
-    c.innerHTML = "";
-    const P = mission.prices, f = (v) => MissionEngine.formatEur(Math.round(v * 100));
-    const card = (img, de, tr, price, wide) => {
-      const d = el("div", "card" + (wide ? " wide" : ""));
-      d.innerHTML = '<img src="img/' + img + '.webp" alt="' + esc(de) + '" loading="lazy"><div class="cap">' +
-        (price ? '<span class="price">' + price + "</span>" : "") + "<b>" + esc(de) + "</b><span>" + esc(tr) + "</span></div>";
-      return d;
+  // ------------------------------------------------------------- session time (module 18)
+  let lastActivity = Date.now(), paused = false, sessionSec = 0, sessionNotified = false;
+  ["pointerdown", "keydown", "scroll", "touchstart"].forEach((ev) => addEventListener(ev, () => { lastActivity = Date.now(); }, { passive: true }));
+  function sessionPill() {
+    const p = S.profile();
+    if (!p || !p.prefs.timer) return null;
+    const b = h("button.pill.session-timer", { title: _("Pause / reprise du chrono de session", "Pause / resume the session timer") });
+    const upd = () => {
+      const m = Math.floor(sessionSec / 60), goal = p.time.session;
+      b.textContent = (paused ? "⏸ " : "⏱ ") + m + " / " + goal + " min";
     };
-    const voc = (de) => (mission.vocabulary || []).find((v) => v.de === de) || {};
-    if (nodeId === "bread") {
-      c.appendChild(el("p", "card-title", esc(T("our_breads"))));
-      [["roggen", "das Roggenbrot"], ["vollkorn", "das Vollkornbrot"], ["weiss", "das Weißbrot"]].forEach(([k, de]) =>
-        c.appendChild(card("p_" + k, de, MissionEngine.pick(voc(de), S.lang), f(P[k]))));
-    } else if (nodeId === "extras") {
-      c.appendChild(card("p_broetchen", "das Brötchen · die Brötchen", MissionEngine.pick(voc("das Brötchen"), S.lang), f(P.broetchen), true));
-    } else if (nodeId === "pay") {
-      c.appendChild(card("coins", "Das macht …", MissionEngine.pick(voc("Das macht …"), S.lang), "", true));
-    } else if (nodeId === "bag") {
-      c.appendChild(card("bag", "die Tüte", MissionEngine.pick(voc("die Tüte"), S.lang), "", true));
+    b.onclick = () => { paused = !paused; upd(); DQ.toast(paused ? _("Session en pause — tout est sauvegardé.", "Session paused — everything is saved.") : _("C’est reparti !", "Off we go again!")); };
+    upd();
+    DQ._updPill = upd;
+    return b;
+  }
+  setInterval(() => {
+    const p = S.profile();
+    if (!p || paused || document.hidden || Date.now() - lastActivity > 120000) return;
+    sessionSec += 15;
+    S.day(p).sec += 15;
+    S.save();
+    if (DQ._updPill) DQ._updPill();
+    if (!sessionNotified && sessionSec >= p.time.session * 60) {
+      sessionNotified = true;
+      DQ.toast(_("🎉 Session de " + p.time.session + " min terminée ! Tu peux continuer ou faire une pause.", "🎉 " + p.time.session + "-minute session done! Carry on or take a break."), 4500);
     }
-  }
+  }, 15000);
+  DQ.resetSession = () => { sessionSec = 0; sessionNotified = false; };
 
-  // ------------------------------------------------------------- wiring
-  function wire(en) {
-    en.on("objective", () => renderObjectives());
-    en.on("npcLine", (id, line) => npcMessage(id, line));
-    let lastNode = "";
-    en.on("choices", (nodeId, opts, k) => {
-      showContext(nodeId);
-      if (nodeId !== lastNode && (qubiKind === "hint" || qubiKind === "pay")) $("qubiBubble").hidden = true;
-      lastNode = nodeId;
-      if (k === "pay") qubi(T("qubi_pay"), "pay");
-      renderChoices(opts, k);
-    });
-    en.on("hint", (h) => qubi(T("qubi_hint") + " " + h, "hint"));
-    en.on("evaluated", (result, fb, model) => {
-      feedback(result, fb, model);
-      if (result === "correct") {
-        Snd.sfx("success", 0.5);
-        if (Math.random() < 0.35) qubi(T("qubi_cheer"), "cheer");
-      } else {
-        Snd.sfx(result === "unknown" ? "hint" : "wrong", 0.5);
-        if (result === "wrong") qubi(T("qubi_oops"), "oops");
-      }
-      if (result === "correct" && en.node().type === "pay") { Snd.sfx("till_beep"); setTimeout(() => Snd.sfx("coin"), 350); setTimeout(() => Snd.sfx("coin", 0.8), 650); }
-      if (result === "correct" && en.nodeId === "bag") Snd.sfx("paper_bag");
-    });
-    en.on("finished", async (summary) => {
-      ended = true;
-      $("answer").hidden = true;
-      $("context").innerHTML = "";
-      qubi(T("qubi_done"));
-      await Snd.say("s_closing", false);
-      await wait(400);
-      Snd.sfx("shop_bell");
-      showActions([[T("see_summary"), () => showResults(summary), true]]);
-    });
+  // ------------------------------------------------------------- reminders (module 07)
+  function inQuiet(n, from, to) {
+    const m = n.getHours() * 60 + n.getMinutes();
+    const toMin = (s) => { const [a, b] = s.split(":").map(Number); return a * 60 + b; };
+    const f = toMin(from), t = toMin(to);
+    return f <= t ? m >= f && m < t : m >= f || m < t;
   }
-
-  function showActions(list) {
-    const row = $("sceneActions");
-    row.innerHTML = "";
-    list.forEach(([label, fn, primary]) => {
-      const b = el("button", "btn " + (primary ? "primary" : "ghost"), esc(label));
-      b.onclick = () => { Snd.sfx("ui_click", 0.6); fn(); };
-      row.appendChild(b);
-    });
-  }
-
-  let introTimer = 0;
-  function sceneIntro(name) {
-    $("introWhen").textContent = T("intro_" + name + "_when");
-    $("introWhat").textContent = T("intro_" + name + "_what");
-    const b = $("sceneIntro");
-    b.hidden = false;
-    b.classList.remove("out");
-    clearTimeout(introTimer);
-    introTimer = setTimeout(() => { b.classList.add("out"); introTimer = setTimeout(() => { b.hidden = true; }, 900); }, 7000);
-  }
-
-  // Modes (§5.4): Learning = full help, Mission = help on request, Real life = listen first.
-  const MODE_DEFAULTS = {
-    learning: { trans: true, subs: true, imm: "easy" },
-    mission: { trans: false, subs: true, imm: "normal" },
-    real: { trans: false, subs: false, imm: "dense" },
+  DQ.reminderAllowed = (p, now = new Date()) => {
+    const n = p.notif;
+    if (!n.enabled) return false;
+    if (n.restDays.includes(now.getDay())) return false;
+    if (inQuiet(now, n.quietFrom, n.quietTo)) return false;
+    if (n.sentDay === S.today(now) && n.sentToday >= n.maxPerDay) return false;
+    if (n.last && now - n.last < n.every * 3600000) return false;
+    return true;
   };
-  function applyMode(m) {
-    S.mode = m;
-    Object.assign(S, MODE_DEFAULTS[m]);
-    saveSettings();
-    document.querySelectorAll('#modes input').forEach((r) => { r.checked = r.value === m; });
-    Snd.refreshVolumes();
+  async function notify() {
+    const p = S.profile();
+    if (!p || !("Notification" in window) || Notification.permission !== "granted" || !DQ.reminderAllowed(p)) return;
+    const pool = DQ.lexicon.filter((e) => e.type === "noun" && !p.cards[e.id]);
+    const e = pool[Math.floor(Math.random() * pool.length)];
+    if (!e) return;
+    const title = "Qubi · " + (e.art ? e.art + " " : "") + e.de + " " + (e.emoji || "");
+    const body = DQ.tr(e) + (e.pl ? " · " + _("pluriel", "plural") + " : die " + e.pl : "") + "\n" + e.ex[0];
+    const n = p.notif;
+    if (n.sentDay !== S.today()) { n.sentDay = S.today(); n.sentToday = 0; }
+    n.sentToday += 1; n.last = Date.now(); S.save();
+    const reg = navigator.serviceWorker && (await navigator.serviceWorker.getRegistration());
+    const actions = [{ action: "know", title: _("Je connais", "I know it") }, { action: "learn", title: _("Apprendre", "Learn") }];
+    if (reg && reg.showNotification) reg.showNotification(title, { body, tag: "dq-word", data: { id: e.id }, actions, icon: "icons/icon-192.png" });
+    else new Notification(title, { body, tag: "dq-word" });
   }
-
-  // ------------------------------------------------------------- flow
-  function enterStage() {
-    document.body.classList.remove("title-mode");
-    $("titleScreen").hidden = true;
-    $("results").hidden = true;
-    $("stage").hidden = false;
-    $("topbar").hidden = false;
-    log().innerHTML = "";
-    $("context").innerHTML = "";
-    $("answer").hidden = true;
-    $("qubiBubble").hidden = true;
-    ended = false;
-    renderObjectives();
-  }
-
-  function sceneStreet() {
-    enterStage();
-    setBg("street");
-    Snd.scene("street");
-    sceneIntro("street");
-    qubi(T("qubi_welcome"));
-    let asked = false;
-    const actions = () => showActions([
-      ...(asked ? [] : [[T("ask_way"), askWay, false]]),
-      [T("enter"), enterBakery, true],
-    ]);
-    async function askWay() {
-      asked = true;
-      $("sceneActions").innerHTML = "";
-      myMessage(T("ask_way_de"));
-      npcMessage("p_way", engine.line("p_way"));
-      await wait(600);
-      qubi(T("qubi_way"), "way");
-      actions();
-    }
-    actions();
-  }
-
-  async function enterBakery(resume) {
-    $("sceneActions").innerHTML = "";
-    Snd.stopVoice();
-    Snd.sfx("shop_bell");
-    setBg("counter");
-    Snd.scene("bakery");
-    sceneIntro("bakery");
-    log().innerHTML = "";
-    engine.complete("enter");
-    qubi(T("qubi_enter"));
-    if (resume === true) { await wait(700); engine.begin(); return; }
-    showActions([[T("talk"), () => { $("sceneActions").innerHTML = ""; engine.begin(); }, true]]);
-  }
-
-  function start(resume) {
-    engine.reset();
-    if (resume && engine.restoreCheckpoint()) {
-      enterStage();
-      enterBakery(true);
-    } else {
-      engine.clearCheckpoint();
-      sceneStreet();
-    }
-  }
-
-  function showResults(sum) {
-    Snd.stopVoice();
-    Snd.scene(null);
-    Snd.ambience("street_amb");
-    setBg("cafe");
-    $("stage").hidden = true;
-    $("topbar").hidden = true;
-    $("results").hidden = false;
-    $("results").scrollTop = 0;
-    $("scoreNum").textContent = sum.score;
-    $("scoreArc").style.strokeDashoffset = 327;
-    requestAnimationFrame(() => requestAnimationFrame(() => { $("scoreArc").style.strokeDashoffset = 327 * (1 - sum.score / 100); }));
-    $("resMeta").textContent = T("meta").replace("%h", sum.hints).replace("%b", sum.best).replace("%a", sum.attempts);
-    const er = $("resErrors");
-    er.innerHTML = sum.errors.length ? "" : '<li class="none">' + esc(T("no_errors")) + "</li>";
-    sum.errors.forEach((e) => {
-      er.appendChild(el("li", "", "<b>" + esc(e.label) + "</b> · " + esc(T("you_said")) + " « " + esc(e.given) + " »<br>" + esc(e.explanation)));
+  setInterval(notify, 60000);
+  DQ.markKnown = (id) => {
+    const p = S.profile(); const now = Date.now();
+    p.cards[id] = p.cards[id] || {};
+    for (const k of DQ.srs.SKILLS) p.cards[id][k] = Object.assign(DQ.srs.newCard(now), { int: 7, reps: 2, due: now + 7 * DQ.srs.DAY, last: now });
+    p.introduced[id] = p.introduced[id] || now;
+    S.save();
+  };
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener("message", (ev) => {
+      const { action, id } = ev.data || {};
+      if (action === "know" && id) { DQ.markKnown(id); DQ.toast(_("Noté comme connu ✔", "Marked as known ✔")); }
+      if (action === "learn" && id) DQ.go("dict/" + id);
     });
-    $("resVocab").innerHTML = sum.vocabulary.map((v) => "<li><b>" + esc(v.de) + (v.pl ? " · " + esc(v.pl) : "") + "</b><span>" + esc(MissionEngine.pick(v, S.lang)) + "</span></li>").join("");
-    $("resGrammar").innerHTML = sum.grammar.map((g) => "<li>" + esc(MissionEngine.pick(g, S.lang)) + "</li>").join("");
-    Snd.sfx("success", 0.7);
   }
 
-  function toTitle() {
-    Snd.stopVoice();
-    Snd.scene(null);
-    $("stage").hidden = true;
-    $("topbar").hidden = true;
-    $("results").hidden = true;
-    $("titleScreen").hidden = false;
-    document.body.classList.add("title-mode");
-    setBg("breadstack");
-    $("resumeBtn").hidden = !engine.hasCheckpoint();
-  }
-
-  // ------------------------------------------------------------- controls
-  $("startBtn").onclick = () => start(false);
-  $("resumeBtn").onclick = () => start(true);
-  $("againBtn").onclick = () => start(false);
-  document.querySelectorAll('#modes input').forEach((r) => (r.onchange = () => applyMode(r.value)));
-  $("showGuided").onclick = () => { $("choices").hidden = false; $("showGuided").hidden = true; };
-  $("sceneIntro").onclick = () => { $("sceneIntro").hidden = true; };
-  $("setMode").onchange = (e) => { applyMode(e.target.value); $("setTrans").checked = S.trans; $("setSubs").checked = S.subs; $("setImm").value = S.imm; };
-  $("setImm").onchange = (e) => { S.imm = e.target.value; saveSettings(); Snd.refreshVolumes(); };
-  $("setCapt").onchange = (e) => { S.capt = e.target.checked; saveSettings(); };
-  $("hintBtn").onclick = () => { Snd.sfx("hint", 0.5); engine.hint(); };
-  $("freeForm").onsubmit = (e) => {
-    e.preventDefault();
-    const v = $("freeInput").value.trim();
-    if (!v || ended) return;
-    lockAnswers();
-    myMessage(v);
-    engine.submitFree(v);
-  };
-  document.querySelectorAll(".lang-switch button").forEach((b) => (b.onclick = () => { S.lang = b.dataset.lang; saveSettings(); applyLang(); }));
-  $("objBtn").onclick = () => { const p = $("objPanel"); p.hidden = !p.hidden; $("objBtn").setAttribute("aria-expanded", String(!p.hidden)); };
-  $("soundBtn").onclick = () => { S.muted = !S.muted; saveSettings(); renderSound(); Snd.refreshVolumes(); };
-  $("settingsBtn").onclick = () => {
-    $("setLang").value = S.lang; $("setTrans").checked = S.trans; $("setSubs").checked = S.subs;
-    $("setMode").value = S.mode; $("setImm").value = S.imm; $("setCapt").checked = S.capt;
-    $("volVoice").value = S.vVoice; $("volSfx").value = S.vSfx; $("volAmb").value = S.vAmb;
-    $("settings").showModal();
-  };
-  $("setLang").onchange = (e) => { S.lang = e.target.value; saveSettings(); applyLang(); };
-  $("setTrans").onchange = (e) => { S.trans = e.target.checked; saveSettings(); document.querySelectorAll(".msg .tr").forEach((t) => { t.hidden = !S.trans; }); };
-  $("setSubs").onchange = (e) => { S.subs = e.target.checked; saveSettings(); };
-  [["volVoice", "vVoice"], ["volSfx", "vSfx"], ["volAmb", "vAmb"]].forEach(([id, k]) => ($(id).oninput = (e) => { S[k] = parseFloat(e.target.value); saveSettings(); Snd.refreshVolumes(); }));
-  $("settings").addEventListener("close", () => { if ($("settings").returnValue === "restart") { engine.reset(); engine.clearCheckpoint(); toTitle(); } });
-  document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || $("settings").open) return;
-    if (!$("answer").hidden && /^[1-4]$/.test(e.key)) {
-      const b = $("choices").children[parseInt(e.key, 10) - 1];
-      if (b) b.click();
-    } else if (e.key === "h" || e.key === "H") { if (!$("answer").hidden) $("hintBtn").click(); }
-    else if (e.key === "r" || e.key === "R") { const p = [...document.querySelectorAll(".msg:not(.me) .pill[data-line]")].pop(); if (p) p.click(); }
-  });
-
-  boot().catch((err) => { document.body.innerHTML = '<p style="padding:24px">Erreur de chargement : ' + esc(err.message) + "</p>"; });
-  window.__dq = { get engine() { return engine; }, Snd, S };
+  // ------------------------------------------------------------- boot
+  S.load();
+  if (location.protocol.startsWith("http") && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  addEventListener("hashchange", render);
+  render();
 })();

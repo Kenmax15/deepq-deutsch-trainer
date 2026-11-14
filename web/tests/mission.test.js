@@ -2,9 +2,9 @@
 // Run:  node web/tests/mission.test.js
 const path = require("path");
 const fs = require("fs");
-const MissionEngine = require("../js/mission.js");
+const MissionEngine = require("../sim/js/mission.js");
 
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, "../data/brot_kaufen.json"), "utf8"));
+const data = JSON.parse(fs.readFileSync(path.join(__dirname, "../sim/data/brot_kaufen.json"), "utf8"));
 let failures = 0;
 const check = (cond, msg) => { if (cond) console.log("  ok   " + msg); else { failures++; console.error("  FAIL " + msg); } };
 

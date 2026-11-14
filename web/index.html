@@ -3,154 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>DeepQ Deutsch Trainer · Brot kaufen</title>
-<meta name="description" content="Mission A1 « Brot kaufen » : achète du pain dans une boulangerie allemande et entraîne-toi à parler allemand.">
-<meta name="theme-color" content="#14110f">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='36' r='22' fill='%2337c9a7'/%3E%3Ccircle cx='24' cy='34' r='4' fill='%23123'/%3E%3Ccircle cx='40' cy='34' r='4' fill='%23123'/%3E%3Cpath d='M32 14V6' stroke='%23123' stroke-width='3'/%3E%3Ccircle cx='32' cy='6' r='4' fill='%23f2b33d'/%3E%3C/svg%3E">
-<link rel="preload" href="img/street.webp" as="image">
+<title>DeepQ Deutsch Trainer</title>
+<meta name="description" content="Apprendre l’allemand hors ligne : dictionnaire illustré, flashcards, révisions espacées, grammaire, conjugaison, quiz, tuteur et Life Simulator.">
+<meta name="theme-color" content="#1fae8c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div id="app">
-  <!-- scene photos (cross-faded) -->
-  <div class="scene" id="scene">
-    <div class="bg" id="bgA"></div>
-    <div class="bg" id="bgB"></div>
-    <div class="shade"></div>
-  </div>
-
-  <!-- top bar -->
-  <header class="topbar" id="topbar" hidden>
-    <button class="chip" id="objBtn" aria-expanded="false" aria-controls="objPanel">
-      <span class="dots" id="objDots"></span><span id="objLabel"></span>
-    </button>
-    <div class="top-right">
-      <button class="icon-btn" id="soundBtn" aria-label="Son"></button>
-      <button class="icon-btn" id="settingsBtn" aria-label="Réglages">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-      </button>
-    </div>
-    <div class="obj-panel" id="objPanel" hidden>
-      <h2 id="objTitle"></h2>
-      <ul id="objList"></ul>
-    </div>
-  </header>
-
-  <!-- title screen -->
-  <section class="screen title-screen" id="titleScreen">
-    <div class="title-card">
-      <p class="brand"><span class="qubi-mini" aria-hidden="true"></span>DeepQ Deutsch Trainer</p>
-      <p class="kicker" data-i18n="mission_kicker"></p>
-      <h1>Brot kaufen</h1>
-      <p class="goal" id="goalText"></p>
-      <ul class="facts">
-        <li data-i18n="fact_time"></li>
-        <li data-i18n="fact_audio"></li>
-        <li data-i18n="fact_free"></li>
-      </ul>
-      <fieldset class="modes" id="modes">
-        <legend data-i18n="mode"></legend>
-        <label><input type="radio" name="mode" value="learning"><span><b data-i18n="mode_learning"></b><small data-i18n="mode_learning_d"></small></span></label>
-        <label><input type="radio" name="mode" value="mission"><span><b data-i18n="mode_mission"></b><small data-i18n="mode_mission_d"></small></span></label>
-        <label><input type="radio" name="mode" value="real"><span><b data-i18n="mode_real"></b><small data-i18n="mode_real_d"></small></span></label>
-      </fieldset>
-      <div class="actions">
-        <button class="btn primary" id="startBtn" data-i18n="start"></button>
-        <button class="btn ghost" id="resumeBtn" data-i18n="resume" hidden></button>
-      </div>
-      <div class="lang-switch" role="group" aria-label="Langue / Language">
-        <button data-lang="fr">Français</button><button data-lang="en">English</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- sound captions ("subtitles" for noises) -->
-  <div class="captions" id="captions" aria-live="polite"></div>
-
-  <!-- scene intro: a short line that sets the scene for the imagination -->
-  <div class="scene-intro" id="sceneIntro" hidden><p class="when" id="introWhen"></p><p class="what" id="introWhat"></p></div>
-
-  <!-- story / dialogue layer -->
-  <section class="stage" id="stage" hidden>
-    <div class="context" id="context" aria-live="polite"></div>
-
-    <div class="sheet" id="sheet">
-      <div class="qubi-bubble" id="qubiBubble" hidden>
-        <div class="qubi" aria-hidden="true"><i></i></div>
-        <p id="qubiText"></p>
-      </div>
-
-      <div class="log" id="log" aria-live="polite"></div>
-
-      <div class="answer" id="answer" hidden>
-        <p class="answer-label" id="answerLabel"></p>
-        <div class="choices" id="choices"></div>
-        <button class="pill show-guided" id="showGuided" hidden data-i18n="show_guided"></button>
-        <form class="free" id="freeForm" autocomplete="off">
-          <input id="freeInput" type="text" spellcheck="false" lang="de" enterkeyhint="send">
-          <button class="btn small" type="submit" data-i18n="send"></button>
-        </form>
-        <div class="tools">
-          <button class="tool" id="hintBtn"><span class="qubi-mini" aria-hidden="true"></span><span data-i18n="hint"></span></button>
-          <span class="keys" data-i18n="keys"></span>
-        </div>
-      </div>
-
-      <div class="actions-row" id="sceneActions"></div>
-    </div>
-  </section>
-
-  <!-- results -->
-  <section class="screen results" id="results" hidden>
-    <div class="results-card">
-      <p class="kicker">Brot kaufen · A1</p>
-      <h1 data-i18n="result_title"></h1>
-      <div class="score">
-        <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="track"/><circle cx="60" cy="60" r="52" class="bar" id="scoreArc"/></svg>
-        <div><b id="scoreNum">0</b><span>%</span></div>
-      </div>
-      <p class="score-label" data-i18n="score"></p>
-      <p class="meta" id="resMeta"></p>
-      <h2 data-i18n="errors"></h2>
-      <ul class="errors" id="resErrors"></ul>
-      <h2 data-i18n="vocab"></h2>
-      <ul class="vocab" id="resVocab"></ul>
-      <h2 data-i18n="grammar"></h2>
-      <ul class="grammar" id="resGrammar"></ul>
-      <div class="actions">
-        <button class="btn primary" id="againBtn" data-i18n="replay_mission"></button>
-      </div>
-      <p class="credits"><a href="credits.html" data-i18n="credits"></a></p>
-    </div>
-  </section>
-
-  <!-- settings -->
-  <dialog id="settings">
-    <form method="dialog">
-      <h2 data-i18n="settings"></h2>
-      <label class="row"><span data-i18n="mode"></span>
-        <select id="setMode"><option value="learning"></option><option value="mission"></option><option value="real"></option></select></label>
-      <label class="row"><span data-i18n="immersion"></span>
-        <select id="setImm"><option value="easy"></option><option value="normal"></option><option value="dense"></option></select></label>
-      <label class="row"><span data-i18n="ui_lang"></span>
-        <select id="setLang"><option value="fr">Français</option><option value="en">English</option></select></label>
-      <label class="row"><span data-i18n="translation"></span><input type="checkbox" id="setTrans"></label>
-      <label class="row"><span data-i18n="subtitles"></span><input type="checkbox" id="setSubs"></label>
-      <label class="row"><span data-i18n="sound_captions"></span><input type="checkbox" id="setCapt"></label>
-      <label class="row"><span data-i18n="vol_voice"></span><input type="range" id="volVoice" min="0" max="1" step="0.05"></label>
-      <label class="row"><span data-i18n="vol_sfx"></span><input type="range" id="volSfx" min="0" max="1" step="0.05"></label>
-      <label class="row"><span data-i18n="vol_ambience"></span><input type="range" id="volAmb" min="0" max="1" step="0.05"></label>
-      <div class="dlg-actions">
-        <button class="btn ghost" value="restart" id="restartBtn" data-i18n="restart"></button>
-        <button class="btn primary" value="close" data-i18n="back"></button>
-      </div>
-    </form>
-  </dialog>
-</div>
-
-<script src="data/brot_kaufen.js"></script>
-<script src="js/mission.js"></script>
-<script src="js/i18n.js"></script>
+<div id="app"><p style="padding:24px">DeepQ Deutsch Trainer…</p></div>
+<script src="data/vocab_a1_1.js"></script>
+<script src="data/vocab_a1_2.js"></script>
+<script src="data/vocab_a1_3.js"></script>
+<script src="data/verbs_a1.js"></script>
+<script src="data/words_a1.js"></script>
+<script src="data/grammar_a1.js"></script>
+<script src="data/placement.js"></script>
+<script src="data/extras_a1.js"></script>
+<script src="js/core/lexicon.js"></script>
+<script src="js/core/conjugate.js"></script>
+<script src="js/core/srs.js"></script>
+<script src="js/core/store.js"></script>
+<script src="js/core/ui.js"></script>
+<script src="js/core/learning.js"></script>
+<script src="js/modules/home.js"></script>
+<script src="js/modules/words.js"></script>
+<script src="js/modules/study.js"></script>
+<script src="js/modules/quiz.js"></script>
+<script src="js/modules/practice.js"></script>
+<script src="js/modules/tutor.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
