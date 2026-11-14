@@ -1,0 +1,6 @@
+# Godot cache (regenerated on first open)
+godot/.godot/
+*.tmp
+__pycache__/
+# local Piper voice models (large, downloaded separately)
+voices/

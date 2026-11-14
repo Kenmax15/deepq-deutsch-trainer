@@ -1,0 +1,229 @@
+{
+  "id": "brot_kaufen",
+  "version": 1,
+  "level": "A1",
+  "validation": "draft-to-review",
+  "title": {"de": "Brot kaufen", "fr": "Acheter du pain", "en": "Buying bread"},
+  "goal": {
+    "fr": "Entre dans la boulangerie, salue la vendeuse, achète un pain (et des petits pains si tu veux), paie et dis au revoir.",
+    "en": "Go into the bakery, greet the shop assistant, buy a loaf (and rolls if you like), pay and say goodbye."
+  },
+  "objectives": [
+    {"id": "enter", "fr": "Entre dans la boulangerie", "en": "Go into the bakery"},
+    {"id": "order", "fr": "Salue et commande du pain", "en": "Greet and order bread"},
+    {"id": "bread", "fr": "Choisis un pain", "en": "Choose a loaf"},
+    {"id": "extras", "fr": "Réponds à « Sonst noch etwas ? »", "en": "Answer “Sonst noch etwas?”"},
+    {"id": "pay", "fr": "Paie le bon montant", "en": "Pay the right amount"},
+    {"id": "bye", "fr": "Prends congé poliment", "en": "Say goodbye politely"}
+  ],
+  "prices": {"roggen": 2.60, "vollkorn": 2.90, "weiss": 2.20, "broetchen": 0.40},
+
+  "lines": {
+    "s_greet":   {"voice": "seller", "de": "Guten Morgen! Was darf es sein?", "fr": "Bonjour ! Qu’est-ce que je vous sers ?", "en": "Good morning! What can I get you?"},
+    "s_pardon":  {"voice": "seller", "de": "Wie bitte? Was möchten Sie?", "fr": "Pardon ? Que désirez-vous ?", "en": "Sorry? What would you like?"},
+    "s_which":   {"voice": "seller", "de": "Gern. Welches Brot möchten Sie? Wir haben Roggenbrot, Vollkornbrot und Weißbrot.", "fr": "Volontiers. Quel pain voulez-vous ? Nous avons du pain de seigle, du pain complet et du pain blanc.", "en": "Sure. Which bread would you like? We have rye bread, wholegrain bread and white bread."},
+    "s_more":    {"voice": "seller", "de": "Sehr gern. Sonst noch etwas?", "fr": "Avec plaisir. Et avec ceci ?", "en": "Certainly. Anything else?"},
+    "s_total_roggen_0":   {"voice": "seller", "de": "Gut. Das macht dann zwei Euro sechzig.", "fr": "Bien. Ça fera deux euros soixante.", "en": "Fine. That comes to two euros sixty."},
+    "s_total_roggen_2":   {"voice": "seller", "de": "Zwei Brötchen, gern. Das macht dann drei Euro vierzig.", "fr": "Deux petits pains, volontiers. Ça fera trois euros quarante.", "en": "Two rolls, sure. That comes to three euros forty."},
+    "s_total_vollkorn_0": {"voice": "seller", "de": "Gut. Das macht dann zwei Euro neunzig.", "fr": "Bien. Ça fera deux euros quatre-vingt-dix.", "en": "Fine. That comes to two euros ninety."},
+    "s_total_vollkorn_2": {"voice": "seller", "de": "Zwei Brötchen, gern. Das macht dann drei Euro siebzig.", "fr": "Deux petits pains, volontiers. Ça fera trois euros soixante-dix.", "en": "Two rolls, sure. That comes to three euros seventy."},
+    "s_total_weiss_0":    {"voice": "seller", "de": "Gut. Das macht dann zwei Euro zwanzig.", "fr": "Bien. Ça fera deux euros vingt.", "en": "Fine. That comes to two euros twenty."},
+    "s_total_weiss_2":    {"voice": "seller", "de": "Zwei Brötchen, gern. Das macht dann drei Euro.", "fr": "Deux petits pains, volontiers. Ça fera trois euros.", "en": "Two rolls, sure. That comes to three euros."},
+    "s_wrong_amount": {"voice": "seller", "de": "Oh, das stimmt nicht ganz. Ich sage es noch einmal.", "fr": "Oh, ce n’est pas tout à fait ça. Je répète.", "en": "Oh, that’s not quite right. Let me say it again."},
+    "s_bag":     {"voice": "seller", "de": "Danke schön! Möchten Sie eine Tüte?", "fr": "Merci beaucoup ! Voulez-vous un sachet ?", "en": "Thank you! Would you like a bag?"},
+    "s_bye":     {"voice": "seller", "de": "Hier, bitte. Schönen Tag noch!", "fr": "Voilà. Bonne journée !", "en": "Here you are. Have a nice day!"},
+    "s_closing": {"voice": "seller", "de": "Tschüss, bis bald!", "fr": "Au revoir, à bientôt !", "en": "Bye, see you soon!"},
+
+    "p_hello":   {"voice": "passerby", "de": "Guten Morgen!", "fr": "Bonjour !", "en": "Good morning!"},
+    "p_hallo":   {"voice": "passerby", "de": "Hallo!", "fr": "Salut !", "en": "Hello!"},
+    "p_way":     {"voice": "passerby", "de": "Die Bäckerei? Gleich da vorne, auf der rechten Seite.", "fr": "La boulangerie ? Juste devant, sur le côté droit.", "en": "The bakery? Just up ahead, on the right-hand side."},
+
+    "m_order_1": {"voice": "model", "de": "Guten Morgen! Ich hätte gern ein Brot, bitte."},
+    "m_bread_r": {"voice": "model", "de": "Ein Roggenbrot, bitte."},
+    "m_more_2":  {"voice": "model", "de": "Ja, zwei Brötchen, bitte."},
+    "m_more_0":  {"voice": "model", "de": "Nein, danke. Das ist alles."},
+    "m_bag_yes": {"voice": "model", "de": "Ja, gern."},
+    "m_bye_1":   {"voice": "model", "de": "Danke, Ihnen auch! Tschüss!"}
+  },
+
+  "start": "order",
+  "nodes": {
+    "order": {
+      "objective": "order",
+      "line": "s_greet",
+      "retry_line": "s_pardon",
+      "hint": {
+        "fr": "On salue d’abord (« Guten Morgen! »), puis on commande poliment avec « Ich hätte gern … » (j’aimerais …) ou « … , bitte ».",
+        "en": "Greet first (“Guten Morgen!”), then order politely with “Ich hätte gern …” (I’d like …) or “… , bitte”."
+      },
+      "options": [
+        {"de": "Guten Morgen! Ich hätte gern ein Brot, bitte.", "result": "correct", "model": "m_order_1",
+         "feedback": {"fr": "Parfait : salutation + « Ich hätte gern » (Konjunktiv II de politesse).", "en": "Perfect: greeting + “Ich hätte gern” (polite Konjunktiv II)."},
+         "next": "bread"},
+        {"de": "Guten Morgen! Ein Brot, bitte.", "result": "correct", "model": "m_order_1",
+         "feedback": {"fr": "Correct et naturel. « Ein Brot, bitte » suffit au comptoir.", "en": "Correct and natural. “Ein Brot, bitte” is enough at the counter."},
+         "next": "bread"},
+        {"de": "Ich will Brot!", "result": "partial", "model": "m_order_1",
+         "feedback": {"fr": "Compris, mais « Ich will » sonne brusque. Dis plutôt « Ich hätte gern … » ou « Ich möchte … », et salue d’abord.", "en": "Understood, but “Ich will” sounds abrupt. Say “Ich hätte gern …” or “Ich möchte …”, and greet first."},
+         "error": {"cat": "politeness", "label": {"fr": "Politesse", "en": "Politeness"}},
+         "next": "bread"},
+        {"de": "Gute Nacht! Ein Brot.", "result": "wrong", "model": "m_order_1",
+         "feedback": {"fr": "« Gute Nacht » se dit le soir avant de dormir. Le matin, on dit « Guten Morgen ».", "en": "“Gute Nacht” is said at bedtime. In the morning, say “Guten Morgen”."},
+         "error": {"cat": "greeting", "label": {"fr": "Salutations", "en": "Greetings"}}}
+      ],
+      "free": {
+        "rules": [
+          {"all": ["gute nacht"], "result": "wrong", "ref": 3},
+          {"all": ["(guten morgen|guten tag|hallo|moin|gruess gott|servus)", "(roggenbrot|roggen)"], "result": "correct", "set": {"bread": "roggen"}, "feedback_ref": 0, "next": "extras"},
+          {"all": ["(guten morgen|guten tag|hallo|moin|gruess gott|servus)", "(vollkornbrot|vollkorn)"], "result": "correct", "set": {"bread": "vollkorn"}, "feedback_ref": 0, "next": "extras"},
+          {"all": ["(guten morgen|guten tag|hallo|moin|gruess gott|servus)", "(weissbrot|weiss)"], "result": "correct", "set": {"bread": "weiss"}, "feedback_ref": 0, "next": "extras"},
+          {"all": ["ich will"], "result": "partial", "ref": 2},
+          {"all": ["(guten morgen|guten tag|hallo|moin|gruess gott|servus)", "brot"], "result": "correct", "ref": 0},
+          {"all": ["brot"], "result": "partial", "model": "m_order_1",
+           "feedback": {"fr": "Compris ! Mais en Allemagne, on salue toujours avant de commander : « Guten Morgen! ».", "en": "Understood! But in Germany you always greet before ordering: “Guten Morgen!”."},
+           "error": {"cat": "greeting", "label": {"fr": "Salutations", "en": "Greetings"}}, "next": "bread"}
+        ]
+      }
+    },
+
+    "bread": {
+      "objective": "bread",
+      "line": "s_which",
+      "retry_line": "s_which",
+      "hint": {
+        "fr": "« Brot » est neutre : das Brot → ein Roggenbrot, ein Vollkornbrot, ein Weißbrot (pas « einen »).",
+        "en": "“Brot” is neuter: das Brot → ein Roggenbrot, ein Vollkornbrot, ein Weißbrot (not “einen”)."
+      },
+      "options": [
+        {"de": "Ein Roggenbrot, bitte.", "result": "correct", "set": {"bread": "roggen"}, "model": "m_bread_r",
+         "feedback": {"fr": "Bien : das Roggenbrot → ein Roggenbrot.", "en": "Good: das Roggenbrot → ein Roggenbrot."}, "next": "extras"},
+        {"de": "Ein Vollkornbrot, bitte.", "result": "correct", "set": {"bread": "vollkorn"}, "model": "m_bread_r",
+         "feedback": {"fr": "Bien : das Vollkornbrot → ein Vollkornbrot.", "en": "Good: das Vollkornbrot → ein Vollkornbrot."}, "next": "extras"},
+        {"de": "Einen Weißbrot, bitte.", "result": "wrong", "model": "m_bread_r",
+         "feedback": {"fr": "« einen » est l’accusatif masculin. « Brot » est neutre : ein Weißbrot.", "en": "“einen” is masculine accusative. “Brot” is neuter: ein Weißbrot."},
+         "error": {"cat": "article", "label": {"fr": "Articles / accusatif", "en": "Articles / accusative"}}}
+      ],
+      "free": {
+        "rules": [
+          {"all": ["(einen|eine) (roggen|vollkorn|weiss)"], "result": "wrong", "ref": 2},
+          {"all": ["roggen"], "result": "correct", "set": {"bread": "roggen"}, "ref": 0},
+          {"all": ["vollkorn"], "result": "correct", "set": {"bread": "vollkorn"}, "ref": 1},
+          {"all": ["weiss"], "result": "correct", "set": {"bread": "weiss"}, "model": "m_bread_r",
+           "feedback": {"fr": "Bien : das Weißbrot → ein Weißbrot.", "en": "Good: das Weißbrot → ein Weißbrot."}, "next": "extras"}
+        ]
+      }
+    },
+
+    "extras": {
+      "objective": "extras",
+      "line": "s_more",
+      "retry_line": "s_more",
+      "hint": {
+        "fr": "« Sonst noch etwas ? » = « Et avec ceci ? ». Pluriel : das Brötchen → die Brötchen (les mots en -chen ne changent pas).",
+        "en": "“Sonst noch etwas?” = “Anything else?”. Plural: das Brötchen → die Brötchen (words in -chen don’t change)."
+      },
+      "options": [
+        {"de": "Ja, zwei Brötchen, bitte.", "result": "correct", "set": {"rolls": 2}, "model": "m_more_2",
+         "feedback": {"fr": "Bien : le pluriel de « das Brötchen » est « die Brötchen ».", "en": "Good: the plural of “das Brötchen” is “die Brötchen”."}, "next": "pay"},
+        {"de": "Ja, zwei Brötchens, bitte.", "result": "wrong", "model": "m_more_2",
+         "feedback": {"fr": "Pas de -s : les noms en -chen sont identiques au pluriel → zwei Brötchen.", "en": "No -s: nouns ending in -chen are the same in the plural → zwei Brötchen."},
+         "error": {"cat": "plural", "label": {"fr": "Pluriel", "en": "Plural"}}},
+        {"de": "Nein, danke. Das ist alles.", "result": "correct", "set": {"rolls": 0}, "model": "m_more_0",
+         "feedback": {"fr": "Parfait : « Das ist alles » = « C’est tout ».", "en": "Perfect: “Das ist alles” = “That’s all”."}, "next": "pay"}
+      ],
+      "free": {
+        "rules": [
+          {"all": ["broetchens"], "result": "wrong", "ref": 1},
+          {"all": ["(zwei|2) broetchen"], "result": "correct", "set": {"rolls": 2}, "ref": 0},
+          {"all": ["(nein|das ist alles|das wars|das waers|nichts)"], "result": "correct", "set": {"rolls": 0}, "ref": 2}
+        ]
+      }
+    },
+
+    "pay": {
+      "objective": "pay",
+      "type": "pay",
+      "line": "s_total_{bread}_{rolls}",
+      "retry_line": "s_wrong_amount",
+      "hint": {
+        "fr": "Écoute bien le prix : « zwei / drei Euro » puis les centimes (zwanzig = 20, vierzig = 40, sechzig = 60, siebzig = 70, neunzig = 90).",
+        "en": "Listen to the price: “zwei / drei Euro” then the cents (zwanzig = 20, vierzig = 40, sechzig = 60, siebzig = 70, neunzig = 90)."
+      },
+      "error": {"cat": "numbers", "label": {"fr": "Nombres et prix", "en": "Numbers and prices"}},
+      "next": "bag"
+    },
+
+    "bag": {
+      "objective": "pay",
+      "line": "s_bag",
+      "retry_line": "s_bag",
+      "hint": {
+        "fr": "Pour accepter : « Ja, gern » / « Ja, bitte ». Pour refuser poliment : « Nein, danke » (jamais « Nein, bitte »).",
+        "en": "To accept: “Ja, gern” / “Ja, bitte”. To refuse politely: “Nein, danke” (never “Nein, bitte”)."
+      },
+      "options": [
+        {"de": "Ja, gern.", "result": "correct", "model": "m_bag_yes",
+         "feedback": {"fr": "Bien : « gern » = volontiers.", "en": "Good: “gern” = gladly."}, "next": "bye"},
+        {"de": "Nein, danke. Ich habe eine Tasche.", "result": "correct", "model": "m_bag_yes",
+         "feedback": {"fr": "Bien : refus poli, et « die Tasche » (le sac) → eine Tasche.", "en": "Good: a polite refusal, and “die Tasche” (the bag) → eine Tasche."}, "next": "bye"},
+        {"de": "Nein, bitte.", "result": "wrong", "model": "m_bag_yes",
+         "feedback": {"fr": "Pour refuser, on dit « Nein, danke ». « Bitte » sert à demander ou à accepter.", "en": "To refuse, say “Nein, danke”. “Bitte” is used to ask for or accept something."},
+         "error": {"cat": "politeness", "label": {"fr": "Politesse", "en": "Politeness"}}}
+      ],
+      "free": {
+        "rules": [
+          {"all": ["nein bitte"], "result": "wrong", "ref": 2},
+          {"all": ["(ja|gern|gerne|bitte)"], "result": "correct", "ref": 0},
+          {"all": ["nein danke"], "result": "correct", "ref": 1}
+        ]
+      }
+    },
+
+    "bye": {
+      "objective": "bye",
+      "line": "s_bye",
+      "retry_line": "s_bye",
+      "hint": {
+        "fr": "« Schönen Tag noch ! » = « Bonne journée ! ». Réponds « Danke, Ihnen auch ! » (merci, à vous aussi) et dis au revoir.",
+        "en": "“Schönen Tag noch!” = “Have a nice day!”. Answer “Danke, Ihnen auch!” (thanks, you too) and say goodbye."
+      },
+      "options": [
+        {"de": "Danke, Ihnen auch! Tschüss!", "result": "correct", "model": "m_bye_1",
+         "feedback": {"fr": "Parfait : « Ihnen » est la forme polie (Sie) au datif.", "en": "Perfect: “Ihnen” is the polite (Sie) form in the dative."}, "next": "end"},
+        {"de": "Danke, gleichfalls. Auf Wiedersehen!", "result": "correct", "model": "m_bye_1",
+         "feedback": {"fr": "Très bien : « gleichfalls » = pareillement.", "en": "Very good: “gleichfalls” = likewise."}, "next": "end"},
+        {"de": "Gute Nacht!", "result": "wrong", "model": "m_bye_1",
+         "feedback": {"fr": "« Gute Nacht » est réservé au soir/coucher. Ici : « Tschüss! » ou « Auf Wiedersehen! ».", "en": "“Gute Nacht” is for bedtime. Here: “Tschüss!” or “Auf Wiedersehen!”."},
+         "error": {"cat": "greeting", "label": {"fr": "Salutations", "en": "Greetings"}}}
+      ],
+      "free": {
+        "rules": [
+          {"all": ["gute nacht"], "result": "wrong", "ref": 2},
+          {"all": ["(tschuess|tschues|wiedersehen|ciao|bis bald|schoenen tag)"], "result": "correct", "ref": 0},
+          {"all": ["(danke|ihnen auch|gleichfalls)"], "result": "partial", "model": "m_bye_1",
+           "feedback": {"fr": "Bien répondu ! Ajoute un au revoir : « Tschüss! » ou « Auf Wiedersehen! ».", "en": "Nicely answered! Add a goodbye: “Tschüss!” or “Auf Wiedersehen!”."}, "next": "end"}
+        ]
+      }
+    }
+  },
+
+  "vocabulary": [
+    {"de": "das Brot", "pl": "die Brote", "fr": "le pain", "en": "bread / loaf"},
+    {"de": "das Brötchen", "pl": "die Brötchen", "fr": "le petit pain", "en": "bread roll"},
+    {"de": "das Roggenbrot", "fr": "le pain de seigle", "en": "rye bread"},
+    {"de": "das Vollkornbrot", "fr": "le pain complet", "en": "wholegrain bread"},
+    {"de": "das Weißbrot", "fr": "le pain blanc", "en": "white bread"},
+    {"de": "die Tüte", "pl": "die Tüten", "fr": "le sachet", "en": "(paper/plastic) bag"},
+    {"de": "die Tasche", "pl": "die Taschen", "fr": "le sac", "en": "bag"},
+    {"de": "der Euro", "pl": "die Euro", "fr": "l’euro", "en": "euro"},
+    {"de": "Ich hätte gern …", "fr": "J’aimerais …", "en": "I’d like …"},
+    {"de": "Sonst noch etwas?", "fr": "Et avec ceci ?", "en": "Anything else?"},
+    {"de": "Das macht …", "fr": "Ça fait …", "en": "That comes to …"},
+    {"de": "Schönen Tag noch!", "fr": "Bonne journée !", "en": "Have a nice day!"}
+  ],
+  "grammar": [
+    {"fr": "Politesse : « Ich hätte gern + accusatif » (Konjunktiv II).", "en": "Politeness: “Ich hätte gern + accusative” (Konjunktiv II)."},
+    {"fr": "Article indéfini neutre à l’accusatif : ein (das Brot → ein Brot).", "en": "Neuter indefinite article in the accusative: ein (das Brot → ein Brot)."},
+    {"fr": "Pluriel des noms en -chen : inchangé (das Brötchen → die Brötchen).", "en": "Plural of nouns in -chen: unchanged (das Brötchen → die Brötchen)."}
+  ]
+}
