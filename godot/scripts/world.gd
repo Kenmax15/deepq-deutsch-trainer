@@ -36,7 +36,8 @@ var env: Environment
 var we: WorldEnvironment
 var seller_spot := Vector3(9.4, WALK_Y, 13.45)
 var counter_front := Vector3(9.4, WALK_Y, 11.2)
-var customer_spot := Vector3(10.2, WALK_Y, 10.3)
+var customer_spot := Vector3(6.9, WALK_Y, 9.75)
+var cafe_seat := Vector3(12.15, WALK_Y, 9.6)
 var player_spawn := Vector3(-30.0, 0.2, 6.6)
 var radio: AudioStreamPlayer3D
 var coffee: AudioStreamPlayer3D

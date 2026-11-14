@@ -1,4 +1,64 @@
 {
+ "baker2": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 3.111
+  },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.006
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.05
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.231
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.024
+  }
+ },
+ "cafe_guest": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 2.845
+  },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.046
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.125
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.022
+  }
+ },
  "customer": {
   "Idle": {
    "length": 6.0,
@@ -7,6 +67,10 @@
   "Run": {
    "length": 0.75,
    "speed": 3.071
+  },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
   },
   "Talk": {
    "length": 6.0,
@@ -34,6 +98,10 @@
    "length": 0.75,
    "speed": 3.56
   },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
   "Talk": {
    "length": 6.0,
    "speed": 0.007
@@ -60,6 +128,10 @@
    "length": 0.75,
    "speed": 3.432
   },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
   "Talk": {
    "length": 6.0,
    "speed": 0.006
@@ -77,6 +149,36 @@
    "speed": 0.026
   }
  },
+ "old_woman": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 2.663
+  },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.043
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.053
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.02
+  }
+ },
  "player": {
   "Idle": {
    "length": 6.0,
@@ -85,6 +187,10 @@
   "Run": {
    "length": 0.75,
    "speed": 3.307
+  },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
   },
   "Talk": {
    "length": 6.0,
@@ -112,6 +218,10 @@
    "length": 0.75,
    "speed": 2.756
   },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
   "Talk": {
    "length": 6.0,
    "speed": 0.005
@@ -138,6 +248,10 @@
    "length": 0.75,
    "speed": 2.689
   },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
+  },
   "Talk": {
    "length": 6.0,
    "speed": 0.005
@@ -163,6 +277,10 @@
   "Run": {
    "length": 0.75,
    "speed": 2.843
+  },
+  "Sit": {
+   "length": 3.0,
+   "speed": 0.0
   },
   "Talk": {
    "length": 6.0,

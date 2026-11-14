@@ -60,6 +60,9 @@ static func mesh(kind: String) -> ArrayMesh:
 		"schnecke": {"a": 0.055, "b": 0.055, "h": 0.022, "c": Color(0.76, 0.52, 0.26), "flour": 0.0, "cuts": "spiral", "glaze": true},
 		"plunder": {"a": 0.05, "b": 0.05, "h": 0.022, "c": Color(0.82, 0.58, 0.3), "flour": 0.0, "cuts": "none", "fruit": true, "box": true},
 		"puder": {"a": 0.075, "b": 0.045, "h": 0.035, "c": Color(0.80, 0.56, 0.3), "flour": 1.0, "cuts": "none"},
+		"berliner": {"a": 0.045, "b": 0.045, "h": 0.04, "c": Color(0.78, 0.5, 0.22), "flour": 0.0, "cuts": "none", "band": true, "sugar": true},
+		"laugenstange": {"a": 0.13, "b": 0.022, "h": 0.022, "c": Color(0.34, 0.17, 0.06), "flour": 0.0, "cuts": "slash", "salt": true},
+		"laugen": {"a": 0.05, "b": 0.045, "h": 0.04, "c": Color(0.36, 0.18, 0.06), "flour": 0.0, "cuts": "cross", "salt": true},
 	}
 	var p: Dictionary = P.get(kind, P["broetchen"])
 	var st := SurfaceTool.new()
@@ -126,6 +129,13 @@ static func mesh(kind: String) -> ArrayMesh:
 				var s := _h(round(v.x * 260.0), round(v.y * 260.0), round(v.z * 260.0))
 				if s > 1.0 - 0.32 * float(p.seeds):
 					col = Color(0.88, 0.8, 0.6) if s > 0.93 else Color(0.18, 0.13, 0.09)
+			if p.get("salt", false) and top > 0.2 and _h(round(v.x * 400.0), round(v.y * 400.0), round(v.z * 400.0)) > 0.9:
+				col = Color(0.96, 0.96, 0.95)
+				v.y += 0.0015
+			if p.get("band", false) and abs(sy) < 0.18:
+				col = Color(0.93, 0.85, 0.66)          # pale band around a Berliner
+			if p.get("sugar", false) and top > 0.35:
+				col = col.lerp(Color(0.97, 0.96, 0.94), 0.7 * smoothstep(0.35, 0.65, _vn(v * 60.0, 1.0) + 0.3))
 			if p.get("glaze", false) and top > 0.3:
 				col = col.lerp(Color(0.95, 0.93, 0.88), 0.55 * smoothstep(0.55, 0.8, _vn(v * 40.0, 1.0)))
 			if p.get("fruit", false) and u.length() < 0.55 and top > 0.3:
@@ -147,6 +157,89 @@ static func mesh(kind: String) -> ArrayMesh:
 	var m := st.commit()
 	_cache[kind] = m
 	return m
+
+
+## A wedge of layered cake (Torte): sponge, cream and filling layers, a cream
+## rosette and a cherry on top. kind: "schwarzwald", "erdbeer", "kaese".
+static func cake_slice(kind: String) -> Node3D:
+	var root := Node3D.new()
+	var layers: Array = {
+		"schwarzwald": [[0.018, Color(0.22, 0.12, 0.07)], [0.012, Color(0.95, 0.93, 0.88)], [0.018, Color(0.22, 0.12, 0.07)], [0.012, Color(0.95, 0.93, 0.88)], [0.016, Color(0.24, 0.13, 0.08)], [0.006, Color(0.95, 0.93, 0.88)]],
+		"erdbeer": [[0.014, Color(0.86, 0.68, 0.38)], [0.022, Color(0.97, 0.94, 0.86)], [0.018, Color(0.78, 0.1, 0.15)]],
+		"kaese": [[0.012, Color(0.72, 0.5, 0.25)], [0.05, Color(0.96, 0.88, 0.6)], [0.004, Color(0.72, 0.48, 0.2)]],
+	}[kind]
+	var y := 0.0
+	for L in layers:
+		var mi := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = 0.12
+		cm.bottom_radius = 0.12
+		cm.height = L[0]
+		cm.radial_segments = 3        # a triangular prism: a 120° wedge of cake
+		cm.rings = 1
+		mi.mesh = cm
+		mi.position.y = y + L[0] / 2.0
+		mi.scale = Vector3(1.0, 1.0, 0.55)
+		var m := StandardMaterial3D.new()
+		m.albedo_color = L[1]
+		m.roughness = 0.8 if L[1].v < 0.5 else 0.55
+		mi.material_override = m
+		root.add_child(mi)
+		y += L[0]
+	if kind != "kaese":
+		var rose := MeshInstance3D.new()
+		var sp := SphereMesh.new()
+		sp.radius = 0.018
+		sp.height = 0.03
+		rose.mesh = sp
+		rose.position = Vector3(0.03, y + 0.01, 0)
+		var rm := StandardMaterial3D.new()
+		rm.albedo_color = Color(0.97, 0.95, 0.9)
+		rm.roughness = 0.5
+		rose.material_override = rm
+		root.add_child(rose)
+		var ch := MeshInstance3D.new()
+		var cs := SphereMesh.new()
+		cs.radius = 0.011
+		cs.height = 0.022
+		ch.mesh = cs
+		ch.position = Vector3(0.03, y + 0.033, 0)
+		var cmat := StandardMaterial3D.new()
+		cmat.albedo_color = Color(0.45, 0.02, 0.05)
+		cmat.roughness = 0.15
+		ch.material_override = cmat
+		root.add_child(ch)
+	return root
+
+
+## A filled roll (belegtes Brötchen): bun halves with lettuce, cheese and ham.
+static func filled_roll(rng: RandomNumberGenerator) -> Node3D:
+	var root := Node3D.new()
+	var bottom := make("broetchen", rng)
+	bottom.scale = Vector3(1.0, 0.45, 1.0)
+	root.add_child(bottom)
+	var y := 0.022
+	for f in [[Color(0.35, 0.62, 0.18), 0.004, 1.12], [Color(0.95, 0.78, 0.3), 0.004, 1.02], [Color(0.86, 0.5, 0.5), 0.006, 1.06]]:
+		var mi := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = 0.046
+		cm.bottom_radius = 0.046
+		cm.height = f[1]
+		cm.radial_segments = 14
+		mi.mesh = cm
+		mi.scale = Vector3(f[2], 1.0, 0.9 * f[2])
+		mi.position.y = y
+		var m := StandardMaterial3D.new()
+		m.albedo_color = f[0]
+		m.roughness = 0.6
+		mi.material_override = m
+		root.add_child(mi)
+		y += f[1]
+	var top := make("broetchen", rng)
+	top.scale = Vector3(1.0, 0.7, 1.0)
+	top.position.y = y - 0.006
+	root.add_child(top)
+	return root
 
 
 ## Convenience: a MeshInstance3D of a kind with a little random variation.

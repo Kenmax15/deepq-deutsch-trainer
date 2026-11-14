@@ -20,7 +20,11 @@ from mathutils import Matrix, Quaternion, Vector
 
 CMU = os.environ.get("CMU_DIR", "/tmp/cmu/data")
 FPS = 30
-HEAD_PITCH = {"Idle": -3.0, "Wait": -4.0, "Talk": -2.0, "Wave": 0.0, "Walk": -6.0, "Run": -6.0}
+HEAD_PITCH = {"Idle": -3.0, "Wait": -4.0, "Talk": -2.0, "Wave": 0.0, "Walk": -6.0, "Run": -6.0, "Sit": -8.0}
+# target forward lean of the chest (degrees): upright standing, slight lean when moving
+CHEST_PITCH = {"Idle": 13.0, "Wait": 14.0, "Talk": 14.0, "Wave": 13.0, "Walk": 14.0, "Run": 20.0, "Sit": 24.0}
+# whole-body lean (neck over mid-ankle, degrees) for the standing clips
+BODY_LEAN = {"Idle": 1.0, "Wait": 1.0, "Talk": 1.5, "Wave": 1.0}
 CURL_SIGN = float(os.environ.get("CURL_SIGN", "1"))
 SRC_FPS = 120
 
@@ -48,6 +52,7 @@ CLIPS = [
     ("Talk", "018/18_08.bvh", 4.0, 10.0, True, True, None),
     ("Wave", "143/143_25.bvh", 0.5, 3.5, False, True, None),
     ("Wait", "040/40_10.bvh", 2.0, 10.0, True, True, None),
+    ("Sit", "018/18_12.bvh", 1.0, 10.0, True, True, "calm"),
 ]
 
 
@@ -122,6 +127,31 @@ def find_cycle(src, t0, win, total):
     return best[1], best[2]
 
 
+def find_calm(src, a, b, length):
+    """Window of `length` s with the least hand movement and the hands low
+    (resting on the lap), for a quiet seated idle."""
+    scn = bpy.context.scene
+    step = 0.1
+    samples = []
+    t = a
+    while t <= b:
+        f = 1 + t * SRC_FPS
+        scn.frame_set(int(f), subframe=f - int(f))
+        hips = (src.matrix_world @ src.pose.bones["Hips"].matrix).translation
+        hands = [(src.matrix_world @ src.pose.bones[n].matrix).translation - hips for n in ("LeftHand", "RightHand")]
+        samples.append((t, hands))
+        t += step
+    best = None
+    n = int(length / step)
+    for i in range(len(samples) - n):
+        move = sum((samples[j + 1][1][k] - samples[j][1][k]).length for j in range(i, i + n) for k in (0, 1))
+        height = sum(max(0.0, h.z) for j in range(i, i + n) for h in samples[j][1])
+        score = move + 0.05 * height
+        if best is None or score < best[0]:
+            best = (score, samples[i][0])
+    return best[1], best[1] + length
+
+
 def build_action(tgt, src, clip):
     name, fn, t0, t1, loop, inplace, win = clip
     for o in list(bpy.data.objects):
@@ -133,7 +163,9 @@ def build_action(tgt, src, clip):
     src = bpy.context.active_object
     act = src.animation_data.action
     total = (act.frame_range[1] - 1) / SRC_FPS
-    if t1 is None:
+    if win == "calm":
+        t0, t1 = find_calm(src, t0, min(t1, total), 3.0)
+    elif t1 is None:
         t0, t1 = find_cycle(src, t0, win, total)
     t1 = min(t1, total)
     print(f"  {name}: {fn} {t0:.2f}-{t1:.2f}s")
@@ -214,6 +246,62 @@ def build_action(tgt, src, clip):
                 parent_rest = rest_local[b.parent.name] if b.parent else Quaternion()
                 arm_q[bn] = parent_pose @ parent_rest.inverted() @ rest_local[bn]
         all_q.append(arm_q)
+
+    # upright back: the CMU actors stand and walk slightly hunched; measure the
+    # mean forward lean of the chest and straighten it, spread over the spine
+    def chest_pitch(arm_q):
+        u = arm_q["spine_03"] @ rest_local["spine_03"].inverted() @ Vector((0, 0, 1))
+        f = arm_q["pelvis"] @ rest_local["pelvis"].inverted() @ Vector((0, -1, 0))
+        f.z = 0.0
+        f.normalize()
+        return math.atan2(u.dot(f), u.z), f
+    if "spine_03" in corr and "pelvis" in corr:
+        lean = sum(chest_pitch(q)[0] for q in all_q) / len(all_q)
+        c = math.radians(CHEST_PITCH.get(name, 0.0)) - lean
+        for arm_q in all_q:
+            _, f = chest_pitch(arm_q)
+            axis = Vector((0, 0, 1)).cross(f).normalized()
+            for bn, k in (("spine_01", 0.1), ("spine_02", 0.5), ("spine_03", 1.0), ("neck_01", 1.0), ("head", 1.0)):
+                if bn in arm_q:
+                    arm_q[bn] = Quaternion(axis, c * k) @ arm_q[bn]
+        after = sum(chest_pitch(q)[0] for q in all_q) / len(all_q)
+        print(f"    chest lean {math.degrees(lean):.1f} -> {math.degrees(after):.1f}")
+
+    # whole-body balance: when standing, the neck should sit above the ankles.
+    # The CMU actors lean forward from the ankles; tilt the pelvis subtree back
+    # about the mid-ankle point and move the pelvis so the feet stay planted.
+    if name in BODY_LEAN and "pelvis" in corr and "foot_l" in corr:
+        sub = [bn for bn in order if bn == "pelvis" or any(p.name == "pelvis" for p in tb_bones[bn].parent_recursive)]
+        def fk(arm_q):
+            pos = {}
+            for bn in order:
+                b = tb_bones[bn]
+                if b.parent is None:
+                    pos[bn] = b.head_local.copy()
+                else:
+                    p = b.parent.name
+                    pos[bn] = pos[p] + (arm_q[p] @ rest_local[p].inverted()) @ (b.head_local - b.parent.head_local)
+            return pos
+        def body_lean(arm_q):
+            pos = fk(arm_q)
+            a = (pos["foot_l"] + pos["foot_r"]) / 2.0
+            v = pos["neck_01"] - a
+            f = arm_q["pelvis"] @ rest_local["pelvis"].inverted() @ Vector((0, -1, 0))
+            f.z = 0.0
+            f.normalize()
+            return math.atan2(v.dot(f), v.z), f, pos, a
+        lean = sum(body_lean(q)[0] for q in all_q) / len(all_q)
+        c = math.radians(BODY_LEAN[name]) - lean
+        m3 = tgt.matrix_world.to_3x3()
+        for i, arm_q in enumerate(all_q):
+            _, f, pos, a = body_lean(arm_q)
+            q = Quaternion(Vector((0, 0, 1)).cross(f).normalized(), c)
+            for bn in sub:
+                arm_q[bn] = q @ arm_q[bn]
+            pa = pos["pelvis"] - a
+            disp[i] = disp[i] + m3 @ (q @ pa - pa)
+        after = sum(body_lean(q)[0] for q in all_q) / len(all_q)
+        print(f"    body lean {math.degrees(lean):.1f} -> {math.degrees(after):.1f}")
 
     # keep the gaze level: the mocap actors tend to look at the floor
     if "head" in corr:

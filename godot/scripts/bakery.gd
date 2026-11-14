@@ -51,6 +51,35 @@ static func _label(text: String, xf: Transform3D, size: int, color: Color, font_
 	return l
 
 
+## Raised 3D letters (TextMesh) with a lit, slightly glowing face.
+static func letters(text: String, xf: Transform3D, size: int, color: Color, depth: float, glow := 1.4, weight := 700) -> MeshInstance3D:
+	var tm := TextMesh.new()
+	tm.text = text
+	tm.font_size = size
+	tm.pixel_size = 0.004
+	tm.depth = depth
+	tm.curve_step = 1.0
+	var f := SystemFont.new()
+	f.font_names = PackedStringArray(["DejaVu Serif", "Georgia", "Times New Roman", "serif"])
+	f.font_weight = weight
+	tm.font = f
+	var mi := MeshInstance3D.new()
+	mi.mesh = tm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = 0.35
+	m.metallic = 0.3
+	if glow > 0.0:
+		m.emission_enabled = true
+		m.emission = color
+		m.emission_energy_multiplier = glow
+	mi.material_override = m
+	mi.transform = xf
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	w.add_child(mi)
+	return mi
+
+
 ## Wheat-ear emblem (stalk + two rows of grains), in the XY plane of `xf`.
 static func wheat(mb: MeshBuilder, base: Vector3, height: float, m: Material, lean := 0.35) -> void:
 	var dir := Vector3(sin(lean), cos(lean), 0).normalized()
@@ -85,16 +114,18 @@ static func facade(world, mb: MeshBuilder, x0: float, W: float, GH: float, stone
 	var frame: StandardMaterial3D = w.plain(Color(0.06, 0.06, 0.065), 0.35, 0.6, "blackframe")
 	var wood: StandardMaterial3D = w.pbr("WoodFloor051", 1.2, Color(0.95, 0.85, 0.72), 0.7, "clad")
 	# anthracite shopfront cladding around the openings, wood strips at the ends
-	mb.box_min(Vector3(ud0 - 0.45, 0.0, -0.06), Vector3(0.45, 3.05, 0.06), wood)
-	mb.box_min(Vector3(uw1, 0.0, -0.06), Vector3(0.45, 3.05, 0.06), wood)
+	for base_u in [ud0 - 0.45, uw1]:
+		mb.box_min(Vector3(base_u, 0.0, -0.03), Vector3(0.45, 3.05, 0.03), anth)
+		for k in range(5):
+			mb.box_min(Vector3(base_u + 0.02 + k * 0.088, 0.0, -0.075), Vector3(0.065, 3.05, 0.05), wood)
 	mb.box_min(Vector3(ud1, 0.0, -0.05), Vector3(uw0 - ud1, 3.05, 0.05), anth)
 	mb.box_min(Vector3(ud0 - 0.45, 0.0, -0.07), Vector3(uw1 - ud0 + 0.9, 0.12, 0.07), anth)
 	# fascia (Blende) with illuminated lettering
 	mb.box_min(Vector3(ud0 - 0.5, 3.0, -0.16), Vector3(uw1 - ud0 + 1.0, 0.95, 0.16), anth)
 	var xf := Transform3D(Basis.IDENTITY, Vector3(x0, 0, 8.0))
 	var mid := (ud0 + uw1) / 2.0 + 0.45
-	_label("Bäckerei · Konditorei", xf * Transform3D(Basis(Vector3.UP, PI), Vector3(mid, 3.47, -0.17)),
-		150, Color(0.98, 0.9, 0.7), 700, true)
+	letters("Bäckerei · Konditorei", xf * Transform3D(Basis(Vector3.UP, PI), Vector3(mid, 3.47, -0.19)),
+		150, Color(0.98, 0.88, 0.64), 0.04, 1.8)
 	var gm := MeshBuilder.new()
 	gm.xform = xf * Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO)
 	wheat(gm, Vector3(-(ud0 + 0.35), 3.12, 0.175), 0.72, _emissive(Color(0.95, 0.72, 0.32), 1.6), 0.45)
@@ -103,6 +134,15 @@ static func facade(world, mb: MeshBuilder, x0: float, W: float, GH: float, stone
 	for k in range(6):
 		var u := ud0 + 0.2 + k * (uw1 - ud0 - 0.4) / 5.0
 		mb.cylinder(Vector3(u, 2.995, -0.1), 0.035, 0.012, _emissive(Color(1.0, 0.86, 0.62), 4.0), 12)
+	for k in range(3):
+		var sl := SpotLight3D.new()
+		sl.position = Vector3(x0 + ud0 + 0.6 + k * (uw1 - ud0 - 1.2) / 2.0, 2.4, 8.0 - 1.5)
+		sl.rotation_degrees = Vector3(-90, 0, 0)
+		sl.light_color = Color(1.0, 0.85, 0.62)
+		sl.light_energy = 1.2
+		sl.spot_range = 3.2
+		sl.spot_angle = 38.0
+		w.add_child(sl)
 	# glazing: full-height glass with slim black frames
 	for h in holes.slice(0, 2):
 		var u0: float = h[0]
@@ -131,34 +171,45 @@ static func facade(world, mb: MeshBuilder, x0: float, W: float, GH: float, stone
 		glz.box(centre + Vector3(0, 1.22, 0), Vector3(leaf_w - 0.1, 2.3, 0.055), g, b)
 	glz.commit(w, false)
 	# window lettering (white on the glass) and an "open" sign on the door
-	var lx := xf * Transform3D(Basis(Vector3.UP, PI), Vector3(uw0 + 1.2, 0, 0.035))
+	var lx := xf * Transform3D(Basis(Vector3.UP, PI), Vector3(uw0 + (uw1 - uw0) / 6.0, 0, 0.035))
 	var lines := ["Frische Brötchen", "Kaffee", "Kuchen", "Snacks"]
 	for i in lines.size():
-		_label(lines[i], lx * Transform3D(Basis.IDENTITY, Vector3(0, 2.25 - i * 0.36, 0)), 64,
+		_label(lines[i], lx * Transform3D(Basis.IDENTITY, Vector3(0, 2.25 - i * 0.36, 0)), 50 if i == 0 else 56,
 			Color(0.97, 0.97, 0.95), 600, false, false)
 		var ul := MeshBuilder.new()
 		ul.xform = mb.xform
-		ul.box(Vector3(uw0 + 1.2, 2.25 - i * 0.36 - 0.13, 0.04), Vector3(0.9, 0.012, 0.004), _gold())
+		ul.box(Vector3(uw0 + (uw1 - uw0) / 6.0, 2.25 - i * 0.36 - 0.13, 0.04), Vector3(0.9, 0.012, 0.004), _gold())
 		ul.commit(w, false)
 	var cupm := MeshBuilder.new()
 	cupm.xform = mb.xform
-	wheat(cupm, Vector3(uw0 + 2.2, 1.55, 0.04), 0.55, _gold(), -0.2)
+	wheat(cupm, Vector3(uw0 + (uw1 - uw0) * 0.5, 1.55, 0.04), 0.55, _gold(), -0.2)
 	cupm.commit(w, false)
 	_label("Geöffnet", xf * Transform3D(Basis(Vector3.UP, PI), Vector3(uw1 - 0.5, 1.55, 0.04)), 34,
 		Color(0.97, 0.97, 0.95), 600, false, false)
+	mb.box(Vector3(ud0 - 0.6, 1.5, -0.085), Vector3(0.82, 0.48, 0.01), anth)
+	_label("Öffnungszeiten\nMo–Fr   6:00 – 18:30\nSa        6:30 – 13:00\nSo        7:30 – 11:00",
+		xf * Transform3D(Basis(Vector3.UP, PI), Vector3(ud0 - 0.6, 1.5, -0.096)), 22, Color(0.95, 0.95, 0.92), 500, false, false)
+	mb.box_min(Vector3(ud0 + 0.05, 0.121, -0.9), Vector3(ud1 - ud0 - 0.1, 0.012, 0.85), w.pbr("Plaster003", 0.3, Color(0.12, 0.12, 0.13), 1.0, "mat"))
 	# awning (dark grey canvas) over window and door
 	var canvas: StandardMaterial3D = w.pbr("Plaster003", 0.8, Color(0.2, 0.2, 0.21), 1.0, "awning")
 	var aw := Basis(Vector3.RIGHT, deg_to_rad(-16))
-	mb.box(Vector3((ud0 + uw1) / 2.0, 2.86, -0.7), Vector3(uw1 - ud0 + 0.3, 0.025, 1.45), canvas, aw)
-	mb.box(Vector3((ud0 + uw1) / 2.0, 2.57, -1.4), Vector3(uw1 - ud0 + 0.3, 0.18, 0.02), canvas)
-	mb.box(Vector3((ud0 + uw1) / 2.0, 2.66, -1.42), Vector3(uw1 - ud0 + 0.3, 0.03, 0.04), anth)
+	var aw_w := uw1 - ud0 + 0.3
+	var amid := (ud0 + uw1) / 2.0
+	mb.box(Vector3(amid, 2.98, -0.06), Vector3(aw_w + 0.1, 0.14, 0.14), anth)                 # cassette
+	mb.box(Vector3(amid, 2.86, -0.75), Vector3(aw_w, 0.02, 1.45), canvas, aw)                  # canvas
+	mb.box(Vector3(amid, 2.64, -1.45), Vector3(aw_w + 0.04, 0.05, 0.06), anth)                 # front bar
+	mb.box(Vector3(amid, 2.52, -1.47), Vector3(aw_w, 0.2, 0.012), canvas)                      # valance
+	for au in [ud0 + 0.2, amid, uw1 - 0.2]:                                                     # folding arms
+		mb.box(Vector3(au, 2.8, -0.7), Vector3(0.035, 0.035, 1.42), anth, Basis(Vector3.RIGHT, deg_to_rad(-12)))
+	var vx := xf * Transform3D(Basis(Vector3.UP, PI), Vector3(amid, 2.52, -1.48))
+	_label("Bäckerei · Café · Frühstück", vx, 38, Color(0.95, 0.9, 0.8), 600, false, false)
 	# projecting sign "Bäckerei" (lit box on a bracket)
 	var sc := Vector3(ud0 - 1.0, 3.45, -0.55)
 	mb.box(sc, Vector3(0.12, 0.78, 0.78), anth)
 	mb.box(Vector3(ud0 - 1.0, 3.88, -0.3), Vector3(0.04, 0.04, 0.6), frame)
 	for s: float in [-1.0, 1.0]:
 		var face := xf * Transform3D(Basis(Vector3.UP, s * PI / 2.0), sc + Vector3(s * 0.065, -0.17, 0))
-		_label("Bäckerei", face, 46, Color(0.98, 0.9, 0.7), 700, true)
+		letters("Bäckerei", face * Transform3D(Basis.IDENTITY, Vector3(0, 0, 0.006)), 46, Color(0.98, 0.88, 0.64), 0.01, 1.6)
 		var wm := MeshBuilder.new()
 		wm.xform = xf * Transform3D(Basis(Vector3.UP, s * PI / 2.0), sc + Vector3(s * 0.066, 0, 0))
 		wheat(wm, Vector3(0, -0.02, 0), 0.3, _emissive(Color(0.95, 0.72, 0.32), 1.6), 0.3)
@@ -203,13 +254,15 @@ static func pavement(world) -> void:
 	_hydrangea(Vector3(4.15, 0.72, 7.35))
 	_boxball(Vector3(13.3, 0.95, 7.35))
 	# small terrace: table and two chairs by the window
-	var tc := Vector3(10.6, 0.12, 7.3)
-	mb.box(tc + Vector3(0, 0.74, 0), Vector3(0.7, 0.035, 0.7), w.pbr("WoodFloor051", 1.0, Color(1, 0.92, 0.8), 0.6, "tabletop"))
-	mb.cylinder(tc + Vector3(0, 0.37, 0), 0.03, 0.72, anth, 10)
-	mb.box(tc + Vector3(0, 0.01, 0), Vector3(0.45, 0.02, 0.45), anth)
-	w.collider(Vector3(0.75, 0.8, 0.75), tc + Vector3(0, 0.4, 0))
-	for s: float in [-1.0, 1.0]:
-		_chair(mb, tc + Vector3(s * 0.72, 0, 0), s * PI / 2.0 + PI)
+	for tc: Vector3 in [Vector3(10.6, 0.12, 7.3), Vector3(8.4, 0.12, 7.3)]:
+		mb.box(tc + Vector3(0, 0.74, 0), Vector3(0.7, 0.035, 0.7), w.pbr("WoodFloor051", 1.0, Color(1, 0.92, 0.8), 0.6, "tabletop"))
+		mb.cylinder(tc + Vector3(0, 0.37, 0), 0.03, 0.72, anth, 10)
+		mb.box(tc + Vector3(0, 0.01, 0), Vector3(0.45, 0.02, 0.45), anth)
+		w.collider(Vector3(0.75, 0.8, 0.75), tc + Vector3(0, 0.4, 0))
+		for s: float in [-1.0, 1.0]:
+			_chair(mb, tc + Vector3(s * 0.72, 0, 0), s * PI / 2.0 + PI)
+		mb.cylinder(tc + Vector3(0.12, 0.83, 0.1), 0.05, 0.12, w.plain(Color(0.75, 0.76, 0.77), 0.3, 0.8, "zinc"), 12)
+		_hydrangea_small(tc + Vector3(0.12, 0.92, 0.1))
 	mb.commit(w)
 
 
@@ -251,6 +304,20 @@ static func _hydrangea(c: Vector3) -> void:
 		else:
 			mi.material_override = leaf
 			mi.scale = Vector3(1.3, 0.5, 1.0)
+		w.add_child(mi)
+
+
+static func _hydrangea_small(c: Vector3) -> void:
+	for i in range(5):
+		var mi := MeshInstance3D.new()
+		var sp := SphereMesh.new()
+		sp.radius = 0.04
+		sp.height = 0.07
+		sp.radial_segments = 8
+		sp.rings = 4
+		mi.mesh = sp
+		mi.position = c + Vector3(rng.randf_range(-0.04, 0.04), rng.randf_range(0.0, 0.04), rng.randf_range(-0.04, 0.04))
+		mi.material_override = w.pbr("Plaster003", 0.12, [Color(0.86, 0.45, 0.66), Color(0.78, 0.5, 0.82)][i % 2], 0.9, "flower%d" % (i % 2))
 		w.add_child(mi)
 
 
@@ -355,7 +422,7 @@ static func interior(world) -> void:
 	mb.box(scr, Vector3(0.03, 0.62, 1.05), black)
 	mb.box(scr + Vector3(-0.017, 0, 0), Vector3(0.005, 0.56, 0.99), _emissive(Color(0.09, 0.07, 0.06), 1.0))
 	var sxf := Transform3D(Basis(Vector3.UP, -PI / 2.0), scr + Vector3(-0.022, 0, 0))
-	_label("Kaffee & Heißgetränke", sxf * Transform3D(Basis.IDENTITY, Vector3(0, 0.2, 0)), 30, Color(0.95, 0.78, 0.45), 600, true, false)
+	_label("Kaffee & Heißgetränke", sxf * Transform3D(Basis.IDENTITY, Vector3(0, 0.2, 0)), 21, Color(0.95, 0.78, 0.45), 600, true, false)
 	_label("Kaffee  2,20 €\nCappuccino  2,90 €\nLatte Macchiato  3,30 €\nHeiße Schokolade  2,80 €",
 		sxf * Transform3D(Basis.IDENTITY, Vector3(0, -0.07, 0)), 22, Color(0.97, 0.96, 0.92), 400, true, false)
 
@@ -379,16 +446,37 @@ static func interior(world) -> void:
 	mb.box_min(vit + Vector3(0, 0.49, 0.6), Vector3(vw, 0.008, 0.02), led)
 	# trays with pastries (lower level) and on the glass shelf
 	var tray: StandardMaterial3D = w.plain(Color(0.7, 0.71, 0.72), 0.3, 0.9, "tray")
-	var goods := ["pretzel", "croissant", "plunder", "schnecke", "puder", "pretzel", "plunder"]
+	var goods := ["pretzel", "croissant", "laugen", "plunder", "berliner", "schnecke", "puder"]
 	for i in range(goods.size()):
 		var tx := vit.x + 0.32 + i * 0.6
 		mb.box_min(Vector3(tx - 0.27, vit.y + 0.01, vit.z + 0.06), Vector3(0.54, 0.01, 0.5), tray)
 		for j in range(6):
 			var p := Vector3(tx - 0.15 + (j % 2) * 0.28, vit.y + 0.02, vit.z + 0.15 + (j / 2) * 0.15)
 			_good(goods[i], p)
-		if i % 2 == 0:
-			for j in range(3):
-				_good(goods[(i + 3) % goods.size()], Vector3(tx - 0.16 + j * 0.15, vit.y + 0.275, vit.z + 0.3 + (j % 2) * 0.1))
+	# glass shelf: cakes, filled rolls and pretzel sticks, each with a price tag
+	var upper := ["schwarzwald", "erdbeer", "kaese", "roll", "roll", "laugenstange", "schwarzwald"]
+	for i in range(upper.size()):
+		var tx := vit.x + 0.32 + i * 0.6
+		var y := vit.y + 0.28
+		for j in range(3):
+			var p := Vector3(tx - 0.16 + j * 0.16, y, vit.z + 0.32)
+			match upper[i]:
+				"roll":
+					var r := BakeryGoods.filled_roll(rng)
+					r.position = p
+					w.add_child(r)
+				"laugenstange":
+					var g := BakeryGoods.make("laugenstange", rng)
+					g.position = p + Vector3(0.06, 0, (j - 1) * 0.06)
+					g.rotation.y = PI / 2.0 + rng.randf_range(-0.1, 0.1)
+					w.add_child(g)
+				_:
+					var c := BakeryGoods.cake_slice(upper[i])
+					c.position = p
+					c.rotation.y = -PI / 2.0 + rng.randf_range(-0.2, 0.2)
+					w.add_child(c)
+		mb.box(Vector3(tx, y + 0.02, vit.z + 0.08), Vector3(0.07, 0.04, 0.004), w.plain(Color(0.95, 0.95, 0.93), 0.6, 0.0, "tag"),
+			Basis(Vector3.RIGHT, -0.5))
 	# right part of the counter: till, card terminal, paper bags, tip jar
 	w.prop("CashRegister_01", c0 + Vector3(cw - 0.6, 0.96, 0.4), PI, 0.75)
 	mb.box(c0 + Vector3(cw - 1.15, 1.0, 0.25), Vector3(0.08, 0.04, 0.16), black, Basis(Vector3.RIGHT, -0.4))
@@ -400,6 +488,61 @@ static func interior(world) -> void:
 	mb.cylinder(c0 + Vector3(cw - 1.95, 0.985, 0.15), 0.05, 0.03, _gold(), 12)
 	# a little plant on the counter
 	w.prop("potted_plant_02", c0 + Vector3(cw - 0.15, 0.96, 0.55), 0.3, 0.45)
+
+	# ---- window display (Schaufensterauslage) seen from the street
+	var wd := Vector3(6.5, 0.12, Z0 + 0.12)
+	mb.box_min(wd, Vector3(3.8, 0.7, 0.5), light_wood)
+	mb.box_min(wd + Vector3(0, 0.7, 0), Vector3(3.8, 0.03, 0.5), w.pbr("Concrete034", 1.0, Color(0.95, 0.93, 0.9), 0.3, "worktop"))
+	w.collider(Vector3(3.8, 0.8, 0.5), wd + Vector3(1.9, 0.4, 0.25))
+	for i in range(4):
+		var bp := wd + Vector3(0.45 + i * 0.95, 0.73, 0.25)
+		w.prop("wicker_basket_01", bp, rng.randf() * 0.5, 1.3)
+		var kinds_w := ["landbrot", "bauernbrot", "kasten", "weiss"]
+		for j in range(3):
+			var g := BakeryGoods.make(kinds_w[i], rng)
+			g.position = bp + Vector3(-0.08 + j * 0.08, 0.07 + (j % 2) * 0.03, rng.randf_range(-0.04, 0.04))
+			g.rotation.y = rng.randf_range(-0.6, 0.6)
+			w.add_child(g)
+
+	# ---- side counter closing the staff area, with a bread slicer and bag dispenser
+	var sc0 := Vector3(X0 + 0.02, 0.12, 11.9)
+	mb.box_min(sc0, Vector3(6.5 - sc0.x, 0.92, 0.8), light_wood)
+	mb.box_min(sc0 + Vector3(0, 0.0, -0.06), Vector3(6.5 - sc0.x, 0.1, 0.06), anth)
+	mb.box_min(sc0 + Vector3(0, 0.1, -0.065), Vector3(6.5 - sc0.x, 0.012, 0.012), led)
+	mb.box_min(sc0 + Vector3(0, 0.92, -0.05), Vector3(6.5 - sc0.x, 0.04, 0.88), w.pbr("Concrete034", 1.0, Color(0.95, 0.93, 0.9), 0.3, "worktop"))
+	w.collider(Vector3(6.5 - sc0.x, 1.2, 0.9), sc0 + Vector3((6.5 - sc0.x) / 2.0, 0.6, 0.4))
+	_slicer(mb, Vector3(5.45, 1.08, 12.35), steel, black)
+	for i in range(4):      # paper bread bags on a hook rail
+		mb.box(Vector3(4.55 + i * 0.12, 1.25, 12.62), Vector3(0.1, 0.3, 0.012), w.plain(Color(0.78, 0.66, 0.48), 0.9, 0.0, "kraft"),
+			Basis(Vector3.UP, 0.1 * i))
+	mb.box(Vector3(4.73, 1.42, 12.62), Vector3(0.5, 0.012, 0.03), steel)
+	# deck oven against the left wall: two baking decks with glass doors, warm light inside
+	_oven(mb, Vector3(X0 + 0.48, 0.12, 13.8), steel, black)
+	# flour sacks stacked by the oven
+	for i in range(3):
+		var sack := Vector3(4.42, 0.12 + 0.11 + (0.2 if i == 2 else 0.0), 14.7 - (0.42 * (i % 2)))
+		mb.box(sack, Vector3(0.55, 0.2, 0.38), w.pbr("Plaster003", 0.3, Color(0.88, 0.83, 0.72), 1.0, "sack"), Basis(Vector3.UP, 0.15 * i))
+	# drinks fridge on the right wall (glass door, lit, bottles)
+	_fridge(mb, Vector3(X1 - 0.34, 0.12, 10.95), steel, black)
+	# coffee to go: paper cups and lids next to the espresso machine
+	for i in range(3):
+		mb.cylinder(Vector3(12.65, 1.1 + i * 0.075, 14.72), 0.042, 0.11, w.plain(Color(0.93, 0.92, 0.9), 0.7, 0.0, "papercup"), 14)
+	mb.cylinder(Vector3(12.65, 1.34, 14.72), 0.045, 0.012, black, 14)
+	# napkins and a sugar jar on the counter
+	mb.box(c0 + Vector3(cw - 2.35, 1.03, 0.2), Vector3(0.14, 0.12, 0.09), steel)
+	var sj := MeshBuilder.new()
+	sj.cylinder(c0 + Vector3(cw - 2.6, 1.04, 0.2), 0.04, 0.14, w.clear_glass(), 14)
+	sj.commit(w, false)
+	for i in range(8):
+		mb.box(c0 + Vector3(cw - 2.6 + rng.randf_range(-0.02, 0.02), 1.06, 0.2 + rng.randf_range(-0.02, 0.02)), Vector3(0.006, 0.1, 0.006),
+			w.plain(Color(0.92, 0.88, 0.75), 0.8, 0.0, "sugar"), Basis(Vector3.FORWARD, rng.randf_range(-0.3, 0.3)))
+	# framed pictures on the left wall
+	for i in range(2):
+		var fp := Vector3(X0 + 0.025, 2.0, 9.4 + i * 1.2)
+		mb.box(fp, Vector3(0.03, 0.62, 0.82), anth)
+		mb.box(fp + Vector3(0.017, 0, 0), Vector3(0.005, 0.54, 0.74), w.pbr("WoodFloor051" if i == 0 else "Plaster003", 0.5,
+			Color(0.95, 0.8, 0.45) if i == 0 else Color(0.85, 0.7, 0.45), 0.9, "pic%d" % i))
+	_label("Seit 1921 in Regensburg", Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(X0 + 0.05, 1.55, 10.0)), 30, Color(0.3, 0.3, 0.32), 400, false, true)
 
 	# ---- pendant lamps (black domes) over the counter and café, and their light
 	for lp: Vector3 in [Vector3(7.4, 0, 12.3), Vector3(9.4, 0, 12.3), Vector3(11.4, 0, 12.3), Vector3(11.3, 0, 9.6)]:
@@ -562,6 +705,71 @@ static func _espresso(mb: MeshBuilder, c: Vector3, steel: Material, black: Mater
 	mb.box(c + Vector3(0, 0.4, -0.255), Vector3(0.5, 0.06, 0.01), black)
 	for i in range(6):
 		mb.cylinder(c + Vector3(-0.27 + i * 0.11, 0.54, 0.05), 0.035, 0.07, w.plain(Color(0.96, 0.96, 0.95), 0.25, 0.0, "porcelain"), 14)
+
+
+static func _slicer(mb: MeshBuilder, c: Vector3, steel: Material, black: Material) -> void:
+	## bread slicing machine: steel body, clear hood over the blades, crank wheel
+	mb.box(c + Vector3(0, 0.12, 0), Vector3(0.62, 0.24, 0.42), steel)
+	mb.box(c + Vector3(0, 0.3, 0.02), Vector3(0.58, 0.12, 0.36), black)
+	var hood := MeshBuilder.new()
+	hood.box(c + Vector3(-0.05, 0.47, 0), Vector3(0.4, 0.22, 0.34), w.clear_glass())
+	hood.commit(w, false)
+	mb.cylinder(c + Vector3(0.33, 0.3, 0), 0.07, 0.03, black, 16, Basis(Vector3.FORWARD, PI / 2.0))
+	var loaf := BakeryGoods.make("bauernbrot", rng)
+	loaf.position = c + Vector3(-0.05, 0.37, 0)
+	loaf.rotation.y = PI / 2.0
+	w.add_child(loaf)
+
+
+static func _oven(mb: MeshBuilder, c: Vector3, steel: Material, black: Material) -> void:
+	## two-deck baking oven (front faces +x, into the shop)
+	mb.box(c + Vector3(0, 0.3, 0), Vector3(0.9, 0.6, 1.5), steel)                    # stand
+	for d in range(2):
+		var y := 0.62 + d * 0.5
+		mb.box(c + Vector3(0, y + 0.22, 0), Vector3(0.9, 0.46, 1.6), steel)
+		mb.box(c + Vector3(0.452, y + 0.22, 0), Vector3(0.01, 0.3, 1.2), _emissive(Color(1.0, 0.55, 0.22), 1.6))   # glowing window
+		mb.box(c + Vector3(0.47, y + 0.4, 0), Vector3(0.03, 0.03, 1.1), black)        # handle
+	mb.box(c + Vector3(0, 1.72, 0), Vector3(0.9, 0.22, 1.6), black)                    # control panel / hood
+	mb.box(c + Vector3(0.452, 1.72, 0.45), Vector3(0.005, 0.07, 0.22), _emissive(Color(0.3, 0.9, 0.6), 2.0))
+	w.collider(Vector3(0.95, 1.9, 1.65), c + Vector3(0, 0.95, 0))
+	var glow := OmniLight3D.new()
+	glow.position = c + Vector3(0.7, 1.0, 0)
+	glow.light_color = Color(1.0, 0.6, 0.3)
+	glow.light_energy = 0.6
+	glow.omni_range = 1.8
+	w.add_child(glow)
+
+
+static func _fridge(mb: MeshBuilder, c: Vector3, steel: Material, black: Material) -> void:
+	## upright drinks cooler, door facing -x, bottles on four shelves
+	# hollow cabinet: back, sides, plinth and top (the front stays open)
+	mb.box(c + Vector3(0.3, 0.98, 0), Vector3(0.02, 1.96, 0.74), black)
+	for sz: float in [-0.36, 0.36]:
+		mb.box(c + Vector3(0, 0.98, sz), Vector3(0.62, 1.96, 0.02), black)
+	mb.box(c + Vector3(0, 0.08, 0), Vector3(0.62, 0.16, 0.74), black)
+	mb.box(c + Vector3(0, 1.94, 0), Vector3(0.62, 0.04, 0.74), black)
+	mb.box(c + Vector3(0.296, 1.05, 0), Vector3(0.01, 1.6, 0.62), _emissive(Color(0.86, 0.92, 1.0), 0.35))     # lit back panel
+	mb.box(c + Vector3(0, 1.88, 0), Vector3(0.64, 0.14, 0.76), _emissive(Color(0.95, 0.97, 1.0), 1.2))          # header
+	var cols := [Color(0.85, 0.25, 0.08), Color(0.15, 0.45, 0.2), Color(0.95, 0.8, 0.2), Color(0.85, 0.85, 0.9), Color(0.5, 0.1, 0.12)]
+	for sh in range(4):
+		var y := 0.38 + sh * 0.38
+		mb.box(c + Vector3(-0.05, y, 0), Vector3(0.48, 0.012, 0.6), w.plain(Color(0.85, 0.87, 0.9), 0.3, 0.6, "fridgeshelf"))
+		for k in range(6):
+			var bc: Color = cols[(sh * 2 + k) % cols.size()]
+			mb.cylinder(c + Vector3(-0.18, y + 0.13, -0.24 + k * 0.095), 0.03, 0.24, w.plain(bc, 0.2, 0.0, "bottle%d" % ((sh * 2 + k) % cols.size())), 10)
+	# open-front door frame (no glass pane: it rendered as a dark mirror)
+	for dz: float in [-0.34, 0.34]:
+		mb.box(c + Vector3(-0.32, 1.0, dz), Vector3(0.03, 1.72, 0.03), black)
+	for dy: float in [0.15, 1.85]:
+		mb.box(c + Vector3(-0.32, dy, 0), Vector3(0.03, 0.04, 0.7), black)
+	var lt := OmniLight3D.new()
+	lt.position = c + Vector3(-0.05, 1.6, 0)
+	lt.light_color = Color(0.9, 0.95, 1.0)
+	lt.light_energy = 0.6
+	lt.omni_range = 0.9
+	w.add_child(lt)
+	mb.box(c + Vector3(-0.34, 1.0, 0.31), Vector3(0.03, 0.5, 0.025), steel)
+	w.collider(Vector3(0.66, 2.0, 0.78), c + Vector3(0, 1.0, 0))
 
 
 static func _grinder(mb: MeshBuilder, c: Vector3, steel: Material, black: Material) -> void:

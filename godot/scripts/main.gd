@@ -138,6 +138,19 @@ func _spawn_passersby() -> void:
 	add_child(c)
 	c.setup(_human({"model": "customer.glb", "idle": "Wait", "shirt": Color(0.3, 0.55, 0.75), "pants": Color(0.2, 0.2, 0.2), "hair": Color(0.2, 0.12, 0.08), "skin": Color(0.7, 0.5, 0.38)}), null)
 	c.avatar.rotation.y = PI * 0.75
+	# more life in the shop: a second baker at the coffee station, a lady
+	# waiting at the counter, a guest sitting in the café corner
+	for spec in [
+		{"model": "baker2.glb", "idle": "Idle", "pos": Vector3(11.95, 0.12, 13.95), "rot": PI + 0.25, "look": true},
+		{"model": "old_woman.glb", "idle": "Wait", "pos": Vector3(7.55, 0.12, 10.95), "rot": PI * 0.92, "look": true},
+		{"model": "cafe_guest.glb", "idle": "Sit", "pos": world.cafe_seat, "rot": -PI / 2.0, "look": false},
+	]:
+		var extra = preload("res://scripts/npc.gd").new()
+		extra.role = "customer"
+		extra.position = spec.pos
+		add_child(extra)
+		extra.setup(_human({"model": spec.model, "idle": spec.idle}), player if spec.look else null)
+		extra.avatar.rotation.y = spec.rot
 
 
 func _spawn_cars() -> void:
@@ -442,6 +455,18 @@ func _demo(which: String) -> void:
 			player.cam_dist = 2.6
 			player.visible = false
 			_on_enter_bakery()
+		"oven":
+			player.global_position = Vector3(8.0, 0.2, 10.4)
+			player.cam_yaw = PI / 2.0 + 0.45
+			player.cam_pitch = -0.1
+			player.cam_dist = 0.6
+			player.visible = false
+		"cafe":
+			player.global_position = Vector3(8.6, 0.2, 11.0)
+			player.cam_yaw = -PI / 2.0 + 0.75
+			player.cam_pitch = -0.12
+			player.cam_dist = 0.6
+			player.visible = false
 		"shelves":
 			player.global_position = Vector3(8.6, 0.2, 11.4)
 			player.cam_yaw = PI
