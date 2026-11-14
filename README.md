@@ -1,75 +1,86 @@
-# DeepQ Deutsch Trainer — Life Simulator (pilot)
+# DeepQ Deutsch Trainer
 
-Pilot of the **DeepQ Life Simulator** (specification v2.0, §5.5): a German street connected to a bakery and a
-complete A1 mission, **"Brot kaufen" (buying bread)**.
+Offline German-learning app for French- and English-speaking adults, built from the consolidated
+specification v2.0 (*Cahier des charges consolidé*). Version **1.0, A1 content**.
 
-**Design decision (14 November 2026): no 3D for now.** The simulator plays on the learner's imagination with
-**photos, sound and atmosphere**: real photographs of each place, German voices, a living soundscape (street,
-church bells, passing cars and bikes, the shop bell, the coffee machine, cups, the bread knife, the till, coins,
-the paper bag) and a short line of scene-setting text. The earlier animated 3D prototype (Godot) is kept on the
-branch `archive-3d-pilot`.
+It is an installable web app (PWA): it runs in Chrome, Edge, Firefox or Safari on Windows, Android, macOS and iOS,
+works offline, needs no account and keeps every piece of data on the device.
 
-| Title and modes | Street | Choosing bread |
+**Design decision (14 November 2026):** no 3D for now. The Life Simulator plays on the learner's imagination
+with photos, voices and soundscapes. The earlier Godot 3D prototype is kept on the branch `archive-3d-pilot`.
+
+## Running it
+
+- **On a computer:** double-click `web/index.html`.
+- **As an installed app (Windows / Android):** serve the `web/` folder from any web address
+  (or locally with `cd web && python -m http.server 8000`), open it in Chrome or Edge, then
+  "Install app" / "Add to home screen". A service worker caches every file, so it then works offline.
+
+## What is in version 1.0
+
+| # | Module (specification §4) | Status |
 |---|---|---|
-| ![](docs/screenshots/web_01_title.jpg) | ![](docs/screenshots/web_02_street.jpg) | ![](docs/screenshots/web_03_bread.jpg) |
-| **Paying** | **Summary** | **Mobile** |
-| ![](docs/screenshots/web_04_pay.jpg) | ![](docs/screenshots/web_05_results.jpg) | ![](docs/screenshots/web_06_mobile.jpg) |
+| 01 | Local profiles: several profiles, language, level, goals, history, export / restore / delete | ✔ |
+| 02 | Personal dictionary: 388 A1 entries — article, plural, FR/EN, category, example, audio; verbs with auxiliary, participle, separability, object | ✔ |
+| 03 | Anti-duplicates: lemma and inflected forms detected (`Bücher` → Buch, `isst` → essen); statuses new / learning / known / mastered / to review; a new word is introduced only once | ✔ |
+| 04 | Flashcards: front/back, picture → word, article, plural, gap sentence, typed answer; answers and self-assessment recorded | ✔ |
+| 05 | Spaced repetition: SM-2 variant (choice justified in `js/core/srs.js`); recognition, recall and active use tracked separately; no penalty for late reviews | ✔ |
+| 06 | Vocabulary quizzes: meaning, picture, listening, plural, article — with explanations | ✔ |
+| 07 | Grammar exercises (grammar book and quizzes) | ✔ A1 |
+| 08 | Error journal: question, answer, explanation, category, date | ✔ |
+| 09 | Audio: offline German voice for every word, example, sentence and text (Piper TTS); slow replay; device voice for the learner's own words | ✔ |
+| 10 | Dashboard: time, goals, words in progress / known / mastered, reviews due, activity vs mastery | ✔ |
+| 11 | Einstufungstest: adaptive, A1–C1, vocabulary / grammar / reading, estimative | ✔ |
+| 12 | Conjugation book: search an infinitive or any form; Präsens, Perfekt, Präteritum, Futur I, Plusquamperfekt, Konjunktiv II, imperative; 64 verbs | ✔ |
+| 13 | DeepQ Grammatikbuch: 13 A1 lessons with tables, translated examples, 65 exercises, favourites, search, alternative explanation | ✔ A1 |
+| 14 | Picture dictionary (one picture per word) and **mystery picture** (noun, article and plural scored separately) | ✔ |
+| 15 | DeepQ Tutor: validated answers from the app's content; with **Ollama** installed, a local AI explains, corrects, works in Socratic mode — AI output is always labelled | ✔ |
+| 16 | Progress bars: daily goal, skills, A1 progress computed from assessments, not word counts | ✔ |
+| 17 | Qubi: mascot with expressions, encouragement, tips, can be switched off | ✔ |
+| 18 | Time management: 5–45 min or custom, session length separate from daily time, pause, saved immediately | ✔ |
+| 19 | Life Simulator: mission "Brot kaufen" in photos and sound (`web/sim/`), next missions listed | ✔ 1 mission |
+| 20 | Sentence building with hints on verb position | ✔ |
+| 21 | Word families, added to reviews in one tap | ✔ |
+| 22 | Pronunciation: listen, record yourself, compare (transcription: later phase) | partial |
+| 23 | Smart reading: clickable texts, comprehension questions, import your own text | ✔ |
+| 24 | Difficulty detection: explainable suggestions from recurring mistakes | ✔ |
+| 25 | Object recognition | later phase |
+| 26 | Weekly review by Qubi | ✔ |
+| 27 | Think in German: picture situations, free writing, model answer, correction | ✔ |
+| 28 | Quiz Arena: find the article, mystery picture, listen and choose, true/false, spot the mistake, quick conjugation, 60-second challenge, duel against Qubi, mix; optional timer and sounds; vertical 9:16 format | ✔ |
 
-## Playing
+Reminders (§7): a new word every 1, 2 or 3 hours with "I know it" / "Learn" actions, quiet hours, rest days and a
+daily limit. They work while the app is open or installed and active; Android may delay them.
 
-Double-click `web/index.html` (Chrome, Edge, Firefox or Safari, on Windows, Android, macOS or iOS),
-or serve the `web/` folder with any static web server (`cd web && python -m http.server 8000`).
-No account, no Internet needed once the files are on the device; progress is saved in the browser.
+## Content (A1)
 
-## What the mission contains
-
-- **Street** (Rothenburg, Saturday morning): Qubi explains the mission; you can ask a passer-by the way.
-- **Bakery**: the door bell rings, Frau Becker greets you. You order, choose a loaf (Roggenbrot, Vollkornbrot,
-  Weißbrot), answer "Sonst noch etwas?", listen to the price and pay, accept or refuse a bag, say goodbye.
-- **Answers**: guided answers or free typing (umlauts optional: "Brotchen" = "Brötchen"). Each answer gets an
-  explanation; wrong or approximate answers come with the right wording to listen to.
-- **Help**: replay, slow replay, translation, Qubi's hints; objectives with progress dots.
-- **Modes** (§5.4): *Learning* (translation shown, Qubi helps, quiet soundscape), *Mission* (translation on
-  request, normal soundscape), *Real life* (German text hidden until tapped, guided answers hidden until asked
-  for, dense soundscape).
-- **Soundscape** (§5.3): separate volumes for voices, effects and ambience; three levels (easy / normal / dense);
-  the ambience ducks automatically under every voice line; captions for sounds ("🔔 The door bell chimes").
-- **Summary**: first-try score, errors with explanations, the mission's vocabulary and grammar points.
-- Interface in French or English.
+236 nouns, 64 verbs, 88 other words and phrases, 13 grammar lessons (65 exercises), 30 placement items (A1–C1),
+3 reading texts, 12 sentence-building items, 8 word families, 6 "think in German" situations, quiz items and
+823 German audio files. All content is written for DeepQ and marked "validated"; words the learner adds are
+marked "not verified". Levels A2–C1 are the next content step.
 
 ## Project layout
 
 ```
-web/index.html            the app (static files only)
-web/js/mission.js         mission engine: dialogue nodes, answer rules, objectives, score, checkpoint
-web/js/app.js             scenes, dialogue UI, soundscape, modes, settings
-web/js/i18n.js            interface strings (FR/EN)
-web/data/brot_kaufen.json mission content (German lines, translations, answers, rules, vocabulary)
-web/data/brot_kaufen.js   same data as a script, so index.html also runs from disk (tools/web_data.py)
-web/img, web/audio        photos (WebP), voices and sounds (MP3)
-web/CREDITS.md            source and licence of every photo and sound
-web/tests/                engine tests (node web/tests/mission.test.js)
-tools/gen_voices.py       German voices with Piper TTS (offline)
-tools/gen_sfx.py          synthesised interface sounds
-tools/web_data.py         rebuilds web/data/*.js after editing a mission JSON
+web/index.html, css/, js/app.js     app shell and routing
+web/js/core/                        lexicon, conjugation, spaced repetition, storage, UI helpers, learning engine
+web/js/modules/                     dashboard & profile, words & reviews, grammar & conjugation, quizzes, practice, tutor
+web/data/                           A1 content (vocabulary, verbs, grammar, placement test, extras)
+web/audio/lex/                      German audio of the content (tools/build_audio.py)
+web/sim/                            Life Simulator (missions in photos and sound) and its credits
+web/tests/                          node web/tests/core.test.js · node web/tests/mission.test.js
+tools/build_audio.py                Piper TTS for all content    tools/build_sw.py   offline cache list
+tools/gen_voices.py, gen_sfx.py, web_data.py                     simulator voices, interface sounds, mission data
 ```
 
-Adding a place = a few photos + an ambience and its background events (`SCENES` in `app.js`) + a mission JSON
-+ its voice lines.
+## Notes on the specification
 
-## Acceptance tests (§12)
-
-| ID | Test | Status |
-|---|---|---|
-| R01 | Works without Internet | ✔ only local files |
-| R07 | Pilot: street → bakery, mission and interaction with the shop assistant playable | ✔ (photo scenes instead of 3D) |
-| R08 | Audio: intelligible voices, contextual sound effects, separate volumes | ✔ ducking under speech, 3 levels |
-| R10 | Saving | ✔ checkpoint at every step, error journal (sync out of scope) |
-
-`node web/tests/mission.test.js` runs 35 checks: a perfect run, mistakes, free answers, compound bread names,
-payment, hints and resuming.
+- **Storage:** the specification asks for SQLite. The web app stores a versioned JSON schema with migrations in the
+  browser and offers export/restore; the same schema maps directly onto SQLite tables for a native build.
+- **Local AI on Android:** the tutor can use Ollama running on a PC on the same Wi-Fi (set its address in the tutor
+  settings). On-device models are a later step.
 
 ## Licences
 
-Photos: Unsplash and Pixabay licences. Sounds: BigSoundBank (CC0). Voices: Piper TTS with CC0-trained voices.
-Details in `web/CREDITS.md`.
+Photos (simulator): Unsplash and Pixabay licences. Sounds: BigSoundBank (CC0). Voices: Piper TTS with
+CC0-trained voices. Details in `web/sim/CREDITS.md`.
