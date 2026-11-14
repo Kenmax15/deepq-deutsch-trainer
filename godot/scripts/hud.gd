@@ -543,7 +543,7 @@ func show_settings(open: bool) -> void:
 		v.add_child(row)
 	v.add_child(_choice_row("immersion", ["easy", "normal", "dense"], ["imm_easy", "imm_normal", "imm_dense"]))
 	v.add_child(_choice_row("mode", ["learning", "mission", "real"], ["mode_learning", "mode_mission", "mode_real"]))
-	v.add_child(_choice_row("quality", ["low", "medium", "high"], ["q_low", "q_medium", "q_high"]))
+	v.add_child(_choice_row("quality", ["low", "medium", "high", "ultra"], ["q_low", "q_medium", "q_high", "q_ultra"]))
 	v.add_child(_choice_row("ui_lang", ["fr", "en"], ["", ""], ["Français", "English"]))
 	for key in ["subtitles", "translation"]:
 		var cb := CheckBox.new()

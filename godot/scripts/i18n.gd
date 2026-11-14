@@ -57,6 +57,7 @@ const STRINGS := {
 	"q_low": {"fr": "Basse", "en": "Low"},
 	"q_medium": {"fr": "Moyenne", "en": "Medium"},
 	"q_high": {"fr": "Élevée", "en": "High"},
+	"q_ultra": {"fr": "Ultra (éclairage global)", "en": "Ultra (global illumination)"},
 	"back": {"fr": "Reprendre le jeu", "en": "Back to the game"},
 	"save": {"fr": "Sauvegarder", "en": "Save"},
 	"saved": {"fr": "Partie sauvegardée.", "en": "Game saved."},

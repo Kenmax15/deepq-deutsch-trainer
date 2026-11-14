@@ -11,6 +11,7 @@ signal said(speaker_key: String, line_id: String)
 @export var answer_line := "p_way"
 
 var avatar: Node3D   # Humanoid or CharacterModel
+var head_marker: Marker3D
 var voice: AudioStreamPlayer3D
 var interactable := false
 var _wp := 0
@@ -30,6 +31,11 @@ func setup(h: Node3D, player: Node3D) -> void:
 	voice.max_db = 3.0
 	voice.position.y = 1.6
 	add_child(voice)
+	head_marker = Marker3D.new()
+	head_marker.position.y = 1.58
+	add_child(head_marker)
+	if player and avatar.has_method("set_look_target"):
+		avatar.set_look_target(player.get_node_or_null("HeadMarker"), 4.5 if role == "seller" else 3.5)
 	if interactable:
 		add_to_group("interactable")
 

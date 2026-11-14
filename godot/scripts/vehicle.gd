@@ -11,17 +11,66 @@ extends Node3D
 
 var engine: AudioStreamPlayer3D
 var horn: AudioStreamPlayer3D
+var parked := false
 var _honked := false
+var _wheels: Array[Node3D] = []
+var _wheel_r := 0.31
+
+## Typical German car colours (silver, grey, black, white, dark blue, red...)
+const PAINTS := [Color(0.62, 0.63, 0.64), Color(0.32, 0.33, 0.35), Color(0.03, 0.03, 0.035),
+	Color(0.86, 0.86, 0.85), Color(0.06, 0.12, 0.28), Color(0.45, 0.05, 0.04),
+	Color(0.18, 0.22, 0.2), Color(0.5, 0.52, 0.55), Color(0.72, 0.7, 0.66)]
+
+
+static func make_model(model_path: String, paint: Color) -> Node3D:
+	var scene: PackedScene = load(model_path)
+	if scene == null:
+		return null
+	var m: Node3D = scene.instantiate()
+	for mi in m.find_children("*", "MeshInstance3D", true, false):
+		var mesh: Mesh = (mi as MeshInstance3D).mesh
+		for i in mesh.get_surface_count():
+			var src := mesh.surface_get_material(i) as StandardMaterial3D
+			if src == null:
+				continue
+			var n := str(src.resource_name)
+			if n.begins_with("paint"):
+				var pm: StandardMaterial3D = src.duplicate()
+				pm.albedo_color = paint
+				pm.metallic = 0.55
+				pm.roughness = 0.32
+				pm.clearcoat_enabled = true
+				pm.clearcoat = 1.0
+				pm.clearcoat_roughness = 0.05
+				mi.set_surface_override_material(i, pm)
+			elif n.begins_with("glass"):
+				var g: StandardMaterial3D = src.duplicate()
+				g.roughness = 0.03
+				g.metallic_specular = 0.9
+				mi.set_surface_override_material(i, g)
+	return m
 
 
 func setup(model_path: String, scale_k: float) -> void:
-	var scene: PackedScene = load(model_path)
-	if scene:
-		var m: Node3D = scene.instantiate()
-		m.scale = Vector3.ONE * scale_k
+	var m: Node3D
+	if model_path.contains("/vehicles/") and not model_path.contains("kenney"):
+		m = make_model(model_path, PAINTS[randi() % PAINTS.size()])
 		m.rotation.y = PI / 2 * direction
-		m.position.y = 0.45 * scale_k
 		add_child(m)
+		for w in m.find_children("wheel_*", "Node3D", true, false):
+			_wheels.append(w)
+		if model_path.contains("van"):
+			_wheel_r = 0.36
+	else:
+		var scene: PackedScene = load(model_path)
+		if scene:
+			m = scene.instantiate()
+			m.scale = Vector3.ONE * scale_k
+			m.rotation.y = PI / 2 * direction
+			m.position.y = 0.45 * scale_k
+			add_child(m)
+	if parked:
+		return
 	engine = AudioStreamPlayer3D.new()
 	engine.stream = load("res://assets/audio/sfx/engine_loop.wav")   # loops via its WAV 'smpl' chunk
 	engine.bus = "SFX"
@@ -44,7 +93,11 @@ func setup(model_path: String, scale_k: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if parked:
+		return
 	position.x += direction * speed * delta
+	for w in _wheels:
+		w.rotate_object_local(Vector3.RIGHT, speed * delta / _wheel_r)
 	if abs(position.x) < 4.0 and not _honked:
 		_honked = true
 		if randf() < horn_chance:

@@ -5,8 +5,7 @@ extends Node3D
 
 const MISSION_PATH := "res://data/missions/brot_kaufen.json"
 const VOICE_DIR := "res://assets/audio/voice/brot_kaufen/"
-const VEHICLES := ["vehicle-truck-red", "vehicle-truck-yellow", "vehicle-truck-green",
-	"vehicle-truck-purple", "vehicle-motorcycle", "vehicle-truck-red"]
+const VEHICLES := ["car_hatch", "car_sedan", "van", "car_hatch", "car_sedan", "car_hatch"]
 
 var world
 var player
@@ -72,20 +71,21 @@ func _ready() -> void:
 
 
 # --------------------------------------------------------------- spawning
-const Q := "res://assets/quaternius/"
+const CHARS := "res://assets/characters/"
 
 
-## Returns a rigged Quaternius character when "model" is given, otherwise the
-## procedural placeholder (kept as a fallback for missing models).
+## Returns a realistic MakeHuman character when "model" is given (a file in
+## assets/characters/), otherwise the procedural placeholder (fallback).
 func _human(params: Dictionary) -> Node3D:
-	if params.has("model") and ResourceLoader.exists(Q + params.model):
+	if params.has("model") and ResourceLoader.exists(CHARS + params.model):
 		var c := CharacterModel.new()
-		c.model_path = Q + params.model
+		c.model_path = CHARS + params.model
 		c.apron = params.get("apron", false)
+		c.idle_clip = params.get("idle", "Idle")
 		return c
 	var h := Humanoid.new()
 	for k in params:
-		if k != "model":
+		if not k in ["model", "apron", "idle"]:
 			h.set(k, params[k])
 	return h
 
@@ -96,24 +96,26 @@ func _spawn_seller() -> void:
 	seller.interactable = true
 	seller.position = world.seller_spot
 	add_child(seller)
-	seller.setup(_human({"model": "women/Casual.gltf", "shirt": Color(0.86, 0.36, 0.4), "pants": Color(0.25, 0.22, 0.3),
+	seller.setup(_human({"model": "seller.glb", "shirt": Color(0.86, 0.36, 0.4), "pants": Color(0.25, 0.22, 0.3),
 		"hair": Color(0.55, 0.32, 0.16), "skin": Color(0.93, 0.76, 0.64), "long_hair": true,
-		"apron": true, "height": 1.66}), player)
+		"height": 1.66}), player)
 	seller.avatar.rotation.y = PI    # faces the door / customers
+	if player.avatar.has_method("set_look_target"):
+		player.avatar.set_look_target(seller.head_marker, 3.2)
 
 
 func _spawn_passersby() -> void:
 	var looks := [
-		{"model": "men/Suit.gltf", "shirt": Color(0.2, 0.5, 0.35), "pants": Color(0.2, 0.2, 0.25), "hair": Color(0.9, 0.82, 0.6), "skin": Color(0.95, 0.8, 0.7), "height": 1.82},
-		{"model": "women/Formal.gltf", "shirt": Color(0.95, 0.85, 0.3), "pants": Color(0.15, 0.3, 0.55), "hair": Color(0.08, 0.06, 0.05), "skin": Color(0.42, 0.28, 0.2), "long_hair": true, "height": 1.68},
-		{"model": "men/Casual_2.gltf", "shirt": Color(0.4, 0.4, 0.45), "pants": Color(0.12, 0.12, 0.14), "hair": Color(0.6, 0.6, 0.6), "skin": Color(0.88, 0.7, 0.58), "height": 1.74},
-		{"model": "women/Suit.gltf", "shirt": Color(0.55, 0.25, 0.6), "pants": Color(0.3, 0.25, 0.2), "hair": Color(0.35, 0.2, 0.1), "skin": Color(0.78, 0.58, 0.44), "long_hair": true, "height": 1.62},
+		{"model": "man_suit.glb", "shirt": Color(0.2, 0.5, 0.35), "pants": Color(0.2, 0.2, 0.25), "hair": Color(0.9, 0.82, 0.6), "skin": Color(0.95, 0.8, 0.7), "height": 1.82},
+		{"model": "woman_casual.glb", "shirt": Color(0.95, 0.85, 0.3), "pants": Color(0.15, 0.3, 0.55), "hair": Color(0.08, 0.06, 0.05), "skin": Color(0.42, 0.28, 0.2), "long_hair": true, "height": 1.68},
+		{"model": "man_casual.glb", "shirt": Color(0.4, 0.4, 0.45), "pants": Color(0.12, 0.12, 0.14), "hair": Color(0.6, 0.6, 0.6), "skin": Color(0.88, 0.7, 0.58), "height": 1.74},
+		{"model": "woman_sport.glb", "shirt": Color(0.55, 0.25, 0.6), "pants": Color(0.3, 0.25, 0.2), "hair": Color(0.35, 0.2, 0.1), "skin": Color(0.78, 0.58, 0.44), "long_hair": true, "height": 1.62},
 	]
 	var routes := [
 		[Vector3(-40, 0.12, 6.8), Vector3(-8, 0.12, 6.8)],
-		[Vector3(30, 0.12, -6.5), Vector3(-30, 0.12, -6.5)],
-		[Vector3(-20, 0.12, -5.6), Vector3(10, 0.12, -5.6), Vector3(10, 0.12, -7.0)],
-		[Vector3(24, 0.12, 5.4), Vector3(40, 0.12, 5.4)],
+		[Vector3(30, 0.12, -6.7), Vector3(-30, 0.12, -6.7)],
+		[Vector3(-20, 0.12, -6.3), Vector3(10, 0.12, -6.3), Vector3(10, 0.12, -7.2)],
+		[Vector3(24, 0.12, 6.4), Vector3(40, 0.12, 6.4)],
 	]
 	for i in range(looks.size()):
 		var n = preload("res://scripts/npc.gd").new()
@@ -132,21 +134,40 @@ func _spawn_passersby() -> void:
 	# a customer browsing inside the shop
 	var c = preload("res://scripts/npc.gd").new()
 	c.role = "customer"
-	c.position = Vector3(17.2, 0.12, 12.0)
+	c.position = world.customer_spot
 	add_child(c)
-	c.setup(_human({"model": "men/Farmer.gltf", "shirt": Color(0.3, 0.55, 0.75), "pants": Color(0.2, 0.2, 0.2), "hair": Color(0.2, 0.12, 0.08), "skin": Color(0.7, 0.5, 0.38)}), null)
-	c.avatar.rotation.y = 0.0
+	c.setup(_human({"model": "customer.glb", "idle": "Wait", "shirt": Color(0.3, 0.55, 0.75), "pants": Color(0.2, 0.2, 0.2), "hair": Color(0.2, 0.12, 0.08), "skin": Color(0.7, 0.5, 0.38)}), null)
+	c.avatar.rotation.y = PI * 0.75
 
 
 func _spawn_cars() -> void:
 	for i in range(VEHICLES.size()):
 		var car = preload("res://scripts/vehicle.gd").new()
-		car.lane_z = 2.0 if i % 2 == 0 else -2.0
+		car.lane_z = 1.75 if i % 2 == 0 else -1.75
 		car.direction = 1.0 if i % 2 == 0 else -1.0
 		car.speed = randf_range(7.0, 11.0)
 		add_child(car)
-		car.setup("res://assets/kenney/vehicles/%s.glb" % VEHICLES[i], 1.6)
+		car.setup("res://assets/vehicles/%s.glb" % VEHICLES[i], 1.0)
 		cars.append(car)
+	# parked cars along both kerbs (not in front of the bakery door or the crossing)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 2026
+	for side in [1.0, -1.0]:
+		var x := -60.0
+		while x < 60.0:
+			var kind: String = ["car_hatch", "car_sedan", "car_hatch", "van"][rng.randi() % 4]
+			var length := 5.3 if kind == "van" else 4.5
+			var free: bool = (abs(x) < 7.0) or (side > 0 and x > 2.0 and x < 9.0)
+			if not free and rng.randf() < 0.72:
+				var pc = preload("res://scripts/vehicle.gd").new()
+				pc.parked = true
+				pc.direction = side
+				pc.lane_z = side * 4.45
+				add_child(pc)
+				pc.setup("res://assets/vehicles/%s.glb" % kind, 1.0)
+				pc.position = Vector3(x + length / 2.0, 0, side * 4.45)
+				world.collider(Vector3(length - 0.3, 1.5, 1.8), pc.position + Vector3(0, 0.75, 0))
+			x += length + rng.randf_range(0.6, 1.8)
 
 
 # ----------------------------------------------------------------- HUD
@@ -256,7 +277,10 @@ func _start_dialogue() -> void:
 	var tw := create_tween()
 	tw.tween_property(player, "global_position", world.counter_front, 0.5)
 	player.face_towards(seller.global_position)
-	player.cam_yaw = PI
+	# over-the-shoulder framing: Frau Becker stays visible above the dialogue box
+	player.cam_yaw = PI + 0.32
+	player.cam_pitch = -0.42
+	player.cam_dist = 2.5
 	hud.reset_translation_default()
 	mission.begin_dialogue()
 
@@ -397,31 +421,35 @@ func _demo(which: String) -> void:
 		hud._start(false)
 	match which:
 		"street":
-			player.global_position = Vector3(-16, 0.2, 5.5)
+			player.global_position = Vector3(-16, 0.2, 6.6)
 			player.cam_yaw = -PI / 2 - 0.25
 			player.cam_pitch = -0.22
 			player.cam_dist = 7.5
 		"bakery":
-			player.global_position = Vector3(9.0, 0.2, 10.0)
-			player.cam_yaw = PI - 0.2
+			player.global_position = Vector3(5.6, 0.2, 9.6)
+			player.cam_yaw = PI - 0.45
 			player.cam_pitch = -0.2
 			player.cam_dist = 3.0
 			_on_enter_bakery()
 		"dialogue":
-			player.global_position = Vector3(9.0, 0.2, 10.0)
+			player.global_position = Vector3(9.4, 0.2, 11.0)
 			await get_tree().create_timer(0.3).timeout
 			_start_dialogue()
-			await get_tree().create_timer(1.0).timeout
-			player.cam_dist = 3.4
 		"closeup":
-			player.global_position = Vector3(11.0, 0.2, 12.2)
+			player.global_position = Vector3(9.4, 0.2, 11.3)
 			player.cam_yaw = PI
 			player.cam_pitch = -0.08
 			player.cam_dist = 2.6
 			player.visible = false
 			_on_enter_bakery()
+		"front":
+			player.global_position = Vector3(9.0, 0.2, 0.5)
+			player.cam_yaw = PI
+			player.cam_pitch = -0.02
+			player.cam_dist = 5.0
+			player.visible = false
 		"passersby":
-			player.global_position = Vector3(-22.0, 0.2, 5.0)
+			player.global_position = Vector3(-22.0, 0.2, 6.6)
 			player.cam_yaw = -PI / 2 + 0.5
 			player.cam_pitch = -0.12
 			player.cam_dist = 4.0

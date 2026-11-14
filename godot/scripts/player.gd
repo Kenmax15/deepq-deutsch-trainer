@@ -32,7 +32,7 @@ func _ready() -> void:
 	col.position.y = 0.875
 	add_child(col)
 
-	const MODEL := "res://assets/quaternius/men/Casual_Hoodie.gltf"
+	const MODEL := "res://assets/characters/player.glb"
 	if ResourceLoader.exists(MODEL):
 		avatar = CharacterModel.new()
 		avatar.model_path = MODEL
@@ -42,6 +42,10 @@ func _ready() -> void:
 		h.pants = Color(0.20, 0.27, 0.40)
 		avatar = h
 	add_child(avatar)
+	var hm := Marker3D.new()
+	hm.name = "HeadMarker"
+	hm.position.y = 1.62
+	add_child(hm)
 
 	_pivot = Node3D.new()
 	_pivot.position.y = 1.55

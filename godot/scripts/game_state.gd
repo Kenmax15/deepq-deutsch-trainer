@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS := {
 	"vol_sfx": 0.8,
 	"vol_ambience": 0.7,
 	"vol_music": 0.45,
-	"quality": "medium",      # low | medium | high
+	"quality": "high",        # low | medium | high | ultra
 	"mouse_sensitivity": 1.0,
 }
 

@@ -1,0 +1,184 @@
+{
+ "customer": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 3.071
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.006
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.05
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.215
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.024
+  }
+ },
+ "man_casual": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 3.56
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.007
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.057
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.408
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.027
+  }
+ },
+ "man_suit": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 3.432
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.006
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.055
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.357
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.026
+  }
+ },
+ "player": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 3.307
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.006
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.053
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.308
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.025
+  }
+ },
+ "seller": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 2.756
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.045
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.09
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.021
+  }
+ },
+ "woman_casual": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 2.689
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.043
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.064
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.021
+  }
+ },
+ "woman_sport": {
+  "Idle": {
+   "length": 6.0,
+   "speed": 0.004
+  },
+  "Run": {
+   "length": 0.75,
+   "speed": 2.843
+  },
+  "Talk": {
+   "length": 6.0,
+   "speed": 0.005
+  },
+  "Wait": {
+   "length": 8.0,
+   "speed": 0.046
+  },
+  "Walk": {
+   "length": 1.133,
+   "speed": 1.125
+  },
+  "Wave": {
+   "length": 3.0,
+   "speed": 0.022
+  }
+ }
+}
