@@ -1,17 +1,19 @@
 /* DeepQ Deutsch Trainer — main app */
 :root {
-  --bg: #f7f3ee; --bg2: #efe8df; --card: #ffffff; --ink: #1f1a16; --ink2: #5b5249; --muted: #8a8075; --line: #e6ddd2;
-  --accent: #e8a21c; --accent-ink: #3b2600; --qubi: #1fae8c; --qubi-soft: #def5ee; --ok: #2f9e6b; --ok-soft: #e2f5ea;
-  --mid: #c98a12; --mid-soft: #fbf0d9; --bad: #d4553f; --bad-soft: #fbe6e1;
-  --der: #2f6fd6; --die: #d24a6a; --das: #2f9e6b;
-  --radius: 16px; --shadow: 0 6px 24px rgba(60, 40, 20, 0.08);
+  --bg: #f6f5fb; --bg2: #eeedf7; --card: #ffffff; --ink: #1e1b3a; --ink2: #4b4868; --muted: #6b6888; --line: #dcd9ea;
+  --accent: #4338ca; --accent-ink: #ffffff; --qubi: #0f766e; --qubi-ink: #ffffff; --qubi-soft: #ddf3ee; --ok: #15803d; --ok-soft: #e3f3e8;
+  --mid: #6d28d9; --mid-soft: #efe9fd; --bad: #b91c1c; --bad-soft: #fde8e8;
+  --der: #1d4ed8; --die: #be185d; --das: #b45309;
+  --radius: 16px; --shadow: 0 6px 24px rgba(30, 27, 75, 0.08);
   --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; --serif: Georgia, "Iowan Old Style", serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #15120f; --bg2: #1d1915; --card: #221d18; --ink: #f4eee7; --ink2: #cbbfb2; --muted: #95897c; --line: #3a322a;
-    --qubi-soft: #143a31; --ok-soft: #173426; --mid-soft: #3a2c10; --bad-soft: #3d1c16; --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
-    --der: #6fa3f5; --die: #f0839c; --das: #5fd29b; color-scheme: dark; }
+  :root { --bg: #0e0b24; --bg2: #151033; --card: #1b1640; --ink: #eef0f8; --ink2: #c9c7e0; --muted: #9c99bd; --line: #2e2860;
+    --accent: #a5b4fc; --accent-ink: #1e1b4b; --qubi: #92ffd8; --qubi-ink: #062a24; --qubi-soft: #123b3a;
+    --ok: #4ade80; --ok-soft: #12321f; --mid: #c4b5fd; --mid-soft: #2a1f5c; --bad: #f87171; --bad-soft: #3d1620;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    --der: #93c5fd; --die: #f9a8d4; --das: #fcd34d; color-scheme: dark; }
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
@@ -65,7 +67,7 @@ p { margin: 0 0 10px; }
 .btn:hover { box-shadow: var(--shadow); }
 .btn:active { transform: scale(0.98); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn.qubi { background: var(--qubi); border-color: var(--qubi); color: #fff; }
+.btn.qubi { background: var(--qubi); border-color: var(--qubi); color: var(--qubi-ink); }
 .btn.ghost { background: transparent; }
 .btn.small { padding: 6px 12px; font-size: 14px; }
 .btn.block { width: 100%; }
@@ -137,7 +139,7 @@ table.t th { font-size: 13px; color: var(--muted); font-weight: 650; }
 
 /* ---------- quiz arena, vertical mode ---------- */
 .arena { max-width: 560px; margin: 0 auto; }
-.arena.vertical { aspect-ratio: 9 / 16; max-height: 82vh; max-width: calc(82vh * 9 / 16); background: linear-gradient(160deg, #1f1a16, #3a2a14); color: #fff; border-radius: 26px; padding: 22px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.arena.vertical { aspect-ratio: 9 / 16; max-height: 82vh; max-width: calc(82vh * 9 / 16); background: linear-gradient(160deg, #0e0b24, #2a1f6b); color: #fff; border-radius: 26px; padding: 22px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .arena.vertical .choice { background: rgba(255, 255, 255, 0.08); color: #fff; border-color: rgba(255, 255, 255, 0.2); }
 .arena.vertical .choice.right { background: rgba(47, 158, 107, 0.45); }
 .arena.vertical .choice.wrong { background: rgba(212, 85, 63, 0.45); }
